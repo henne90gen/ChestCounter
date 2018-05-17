@@ -1,0 +1,19 @@
+[
+{
+    "modid": "chestcounter",
+    "name": "Chest Counter",
+    "description": "Counts items in chests",
+    "mcversion": "$mcversion",
+    "version": "$version",
+    "url": "",
+    "updateUrl": "",
+    "authors": ["Henne"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [
+    ],
+    "parent": "",
+    "dependencies": [
+    ]
+}
+]
