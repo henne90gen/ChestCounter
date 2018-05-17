@@ -18,7 +18,11 @@ public class ChestCounter {
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
-        MinecraftForge.EVENT_BUS.register(new ChestInteractHandler(logger));
+        MinecraftForge.EVENT_BUS.register(new ChestEventHandler());
         logger.info("Enabled");
+    }
+
+    public static void logError(Exception e) {
+        logger.error("Something went wrong!", e);
     }
 }

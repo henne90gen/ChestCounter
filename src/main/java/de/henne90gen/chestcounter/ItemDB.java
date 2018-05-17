@@ -3,9 +3,7 @@ package de.henne90gen.chestcounter;
 import com.google.gson.Gson;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -25,13 +23,7 @@ public class ItemDB {
     private static void saveWrapper(Chest chest) {
         ChestCounter.logger.info("Saving {} with {}", chest.id, chest.items.toString());
         try {
-            File jsonFile = new File(JSON_FILE_NAME);
-            ChestContainer chestContainer = null;
-            if (jsonFile.exists()) {
-                FileReader reader = new FileReader(jsonFile);
-                chestContainer = gson.fromJson(reader, ChestContainer.class);
-                reader.close();
-            }
+            ChestContainer chestContainer = loadChestContainer();
             if (chestContainer == null) {
                 chestContainer = new ChestContainer();
             }
@@ -47,11 +39,9 @@ public class ItemDB {
 
             chestContainer.chests.put(chest.id, chest);
 
-            FileWriter writer = new FileWriter(jsonFile);
-            gson.toJson(chestContainer, writer);
-            writer.close();
+            writeChestContainer(chestContainer);
         } catch (Exception e) {
-            logError(e);
+            ChestCounter.logError(e);
         }
     }
 
@@ -62,13 +52,7 @@ public class ItemDB {
     public static void deleteWrapper(String id) {
         ChestCounter.logger.info("Deleting {}", id);
         try {
-            File jsonFile = new File(JSON_FILE_NAME);
-            if (!jsonFile.exists()) {
-                return;
-            }
-            FileReader reader = new FileReader(jsonFile);
-            ChestContainer chestContainer = gson.fromJson(reader, ChestContainer.class);
-            reader.close();
+            ChestContainer chestContainer = loadChestContainer();
             if (chestContainer == null) {
                 return;
             }
@@ -78,16 +62,32 @@ public class ItemDB {
                 }
             }
 
-            FileWriter writer = new FileWriter(jsonFile);
-            gson.toJson(chestContainer, writer);
-            writer.close();
+            writeChestContainer(chestContainer);
         } catch (Exception e) {
-            logError(e);
+            ChestCounter.logError(e);
         }
     }
 
-    private static void logError(Exception e) {
-        ChestCounter.logger.error("Something went wrong!", e);
+    public static void writeChestContainer(ChestContainer chestContainer) throws IOException {
+        File jsonFile = new File(JSON_FILE_NAME);
+        if (!jsonFile.exists()) {
+            return;
+        }
+        try (FileWriter writer = new FileWriter(jsonFile)) {
+            gson.toJson(chestContainer, writer);
+        }
+    }
+
+    public static ChestContainer loadChestContainer() throws IOException {
+        File jsonFile = new File(JSON_FILE_NAME);
+        if (!jsonFile.exists()) {
+            return null;
+        }
+        ChestContainer chestContainer;
+        try (FileReader reader = new FileReader(jsonFile)) {
+            chestContainer = gson.fromJson(reader, ChestContainer.class);
+        }
+        return chestContainer;
     }
 
     public static String buildID(List<BlockPos> positions) {
