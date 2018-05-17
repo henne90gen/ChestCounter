@@ -1,6 +1,10 @@
 package de.henne90gen.chestcounter;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.command.ServerCommandManager;
+import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -20,6 +24,7 @@ public class ChestCounter {
         logger = event.getModLog();
         MinecraftForge.EVENT_BUS.register(new ChestEventHandler());
         logger.info("Enabled");
+		ClientCommandHandler.instance.registerCommand(new ChestCommand());
     }
 
     public static void logError(Exception e) {

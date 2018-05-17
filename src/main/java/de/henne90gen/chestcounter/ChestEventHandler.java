@@ -11,6 +11,7 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.GuiContainerEvent;
+import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
@@ -22,12 +23,23 @@ public class ChestEventHandler {
 
 	private final List<BlockPos> chestPositions;
 
+	private Chest chest;
+
 	public ChestEventHandler() {
 		this.chestPositions = new ArrayList<>();
 	}
 
 	@SubscribeEvent
-	public void open(GuiContainerEvent event) {
+	public void close(GuiOpenEvent event) {
+		if (event.getGui() == null && chest != null) {
+			ItemDB.save(chest);
+			chest = null;
+			chestPositions.clear();
+		}
+	}
+
+	@SubscribeEvent
+	public void guiIsOpen(GuiContainerEvent event) {
 		if (shouldNotHandleEvent(event)) {
 			return;
 		}
@@ -36,13 +48,17 @@ public class ChestEventHandler {
 		if (mc.currentScreen instanceof GuiContainer) {
 			Container currentContainer = ((GuiContainer) mc.currentScreen).inventorySlots;
 
-			Chest chest = new Chest();
+			chest = new Chest();
 			chest.id = ItemDB.buildID(chestPositions);
 			chest.items = countItems(currentContainer);
-			ItemDB.save(chest);
 		}
+	}
 
-		chestPositions.clear();
+	private boolean shouldNotHandleEvent(GuiContainerEvent event) {
+		return chestPositions.isEmpty() || event.getGuiContainer() == null ||
+				event.getGuiContainer().mc == null ||
+				event.getGuiContainer().mc.world == null ||
+				!event.getGuiContainer().mc.world.isRemote;
 	}
 
 	private Map<String, Integer> countItems(Container currentContainer) {
@@ -61,14 +77,6 @@ public class ChestEventHandler {
 			counter.put(itemName, currentCount);
 		}
 		return counter;
-	}
-
-	@SubscribeEvent
-	public void command(ClientChatEvent event) {
-		if (event.getMessage().startsWith("/chest")) {
-			CommandHandler.query(event.getMessage());
-			event.setCanceled(true);
-		}
 	}
 
 	@SubscribeEvent
@@ -98,13 +106,5 @@ public class ChestEventHandler {
 		if (tileEntity instanceof TileEntityChest) {
 			chestPositions.add(position);
 		}
-	}
-
-	private boolean shouldNotHandleEvent(GuiContainerEvent event) {
-		return event.getGuiContainer() == null ||
-				event.getGuiContainer().mc == null ||
-				event.getGuiContainer().mc.world == null ||
-				!event.getGuiContainer().mc.world.isRemote ||
-				chestPositions.isEmpty();
 	}
 }
