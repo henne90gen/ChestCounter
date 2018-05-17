@@ -6,6 +6,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.henne90gen.chestcounter.dtos.ChestContent;
+import de.henne90gen.chestcounter.dtos.Chests;
+import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import javax.annotation.Nullable;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
@@ -27,19 +30,28 @@ public class ChestCommand implements ICommand {
 			return;
 		}
 		try {
-			ChestContainer chestContainer = ItemDB.loadChestContainer();
-			if (chestContainer == null) {
-				player.sendMessage(new TextComponentString("No data available"));
+			ChestWorlds worlds = ItemDB.readChestWorlds();
+			if (worlds == null) {
+				printNoData(player);
 				return;
 			}
 
+			Chests world = worlds.get(ChestCounter.getWorldID());
+			if (world == null) {
+				printNoData(player);
+				return;
+			}
 			String queryString = args[0];
-			Map<String, Integer> amount = gatherAmounts(chestContainer, queryString);
+			Map<String, Integer> amount = gatherAmounts(world, queryString);
 
 			printAmounts(player, amount);
 		} catch (IOException e) {
 			ChestCounter.logError(e);
 		}
+	}
+
+	private void printNoData(EntityPlayerSP player) {
+		player.sendMessage(new TextComponentString("No data available"));
 	}
 
 	private void printAmounts(EntityPlayerSP player, Map<String, Integer> amount) {
@@ -48,9 +60,9 @@ public class ChestCommand implements ICommand {
 		}
 	}
 
-	private Map<String, Integer> gatherAmounts(ChestContainer chestContainer, String queryString) {
+	private Map<String, Integer> gatherAmounts(Chests chests, String queryString) {
 		Map<String, Integer> amount = new LinkedHashMap<>();
-		for (Map.Entry<String, Chest> chestEntry : chestContainer.chests.entrySet()) {
+		for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
 			for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
 				if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
 					Integer itemAmount = amount.get(itemEntry.getKey());
