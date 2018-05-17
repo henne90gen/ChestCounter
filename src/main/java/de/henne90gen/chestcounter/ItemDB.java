@@ -70,9 +70,9 @@ public class ItemDB {
 
     public static void writeChestContainer(ChestContainer chestContainer) throws IOException {
         File jsonFile = new File(JSON_FILE_NAME);
-        if (!jsonFile.exists()) {
-            return;
-        }
+//        if (!jsonFile.exists()) {
+//            return;
+//        }
         try (FileWriter writer = new FileWriter(jsonFile)) {
             gson.toJson(chestContainer, writer);
         }
