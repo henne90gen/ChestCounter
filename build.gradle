@@ -76,3 +76,9 @@ processResources {
         exclude 'mcmod.info'
     }
 }
+
+task copyToGame(type: Copy, dependsOn: build) {
+	// Provide the destination directory like so: -Pdest=/path/to/destination
+	from file("${buildDir}/libs/${archivesBaseName}-${version}.jar")
+	into file(dest)
+}
