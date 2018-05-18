@@ -1,4 +1,4 @@
-package de.henne90gen.chestcounter;
+package de.henne90gen.chestcounter.commands;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -6,9 +6,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.henne90gen.chestcounter.ChestCounter;
+import de.henne90gen.chestcounter.ItemDB;
 import de.henne90gen.chestcounter.dtos.ChestContent;
-import de.henne90gen.chestcounter.dtos.Chests;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
+import de.henne90gen.chestcounter.dtos.Chests;
 import javax.annotation.Nullable;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
@@ -20,6 +22,12 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraftforge.fml.client.FMLClientHandler;
 
 public class ChestCommand implements ICommand {
+
+	private final ChestCounter mod;
+
+	public ChestCommand(ChestCounter mod){
+		this.mod =  mod;
+	}
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
@@ -36,7 +44,7 @@ public class ChestCommand implements ICommand {
 				return;
 			}
 
-			Chests world = worlds.get(ChestCounter.getWorldID());
+			Chests world = worlds.get(mod.getWorldID());
 			if (world == null) {
 				printNoData(player);
 				return;
@@ -46,7 +54,7 @@ public class ChestCommand implements ICommand {
 
 			printAmounts(player, amount);
 		} catch (IOException e) {
-			ChestCounter.logError(e);
+			mod.logError(e);
 		}
 	}
 

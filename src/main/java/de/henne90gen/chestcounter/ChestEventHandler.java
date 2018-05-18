@@ -22,11 +22,14 @@ public class ChestEventHandler {
 
 	private static final int INVENTORY_SIZE = 36;
 
+	private final ChestCounter mod;
+
 	private final List<BlockPos> chestPositions;
 
 	private Chest chest;
 
-	public ChestEventHandler() {
+	public ChestEventHandler(ChestCounter mod) {
+		this.mod = mod;
 		this.chestPositions = new ArrayList<>();
 	}
 
@@ -50,7 +53,7 @@ public class ChestEventHandler {
 			Container currentContainer = ((GuiContainer) mc.currentScreen).inventorySlots;
 
 			chest = new Chest();
-			chest.worldID = ChestCounter.getWorldID();
+			chest.worldID = mod.getWorldID();
 			chest.id = ItemDB.buildID(chestPositions);
 			chest.chestContent = countItems(currentContainer);
 		}
@@ -102,7 +105,7 @@ public class ChestEventHandler {
 		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
 		if (tileEntity instanceof TileEntityChest) {
 			Chest chestToDelete = new Chest();
-			chestToDelete.worldID = ChestCounter.getWorldID();
+			chestToDelete.worldID = mod.getWorldID();
 			chestToDelete.id = ItemDB.buildID(Collections.singletonList(event.getPos()));
 			ItemDB.delete(chestToDelete);
 		}
