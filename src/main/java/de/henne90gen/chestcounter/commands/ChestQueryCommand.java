@@ -42,7 +42,13 @@ public class ChestQueryCommand implements ICommand {
 			Map<String, Integer> itemCounts = chestDB.getItemCountsForLabel(mod.getWorldID(), label);
 			mod.log("Query results: " + itemCounts);
 
-			player.sendMessage(new TextComponentString(label + ":"));
+			if (itemCounts.size() == 0) {
+				player.sendMessage(new TextComponentString("No data available"));
+				return;
+			} else {
+				player.sendMessage(new TextComponentString(label + ":"));
+			}
+
 			if (args.length == 1) {
 				printAmounts(player, itemCounts);
 			} else {
