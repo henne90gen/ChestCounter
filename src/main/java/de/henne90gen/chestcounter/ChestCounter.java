@@ -5,14 +5,15 @@ import java.util.List;
 
 import de.henne90gen.chestcounter.commands.ChestCommand;
 import de.henne90gen.chestcounter.commands.ChestLabelCommand;
+import de.henne90gen.chestcounter.commands.ChestQueryCommand;
 import de.henne90gen.chestcounter.eventhandlers.ChestEventHandler;
-import de.henne90gen.chestcounter.eventhandlers.ChestLabelEventHandler;
 import javax.annotation.Nonnull;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -39,30 +40,30 @@ public class ChestCounter implements IChestCounter {
 
 		// register event handler
 		MinecraftForge.EVENT_BUS.register(new ChestEventHandler(this));
-		MinecraftForge.EVENT_BUS.register(new ChestLabelEventHandler(this));
 
 		// register commands
 		ClientCommandHandler.instance.registerCommand(new ChestCommand(this));
 		ClientCommandHandler.instance.registerCommand(new ChestLabelCommand(this));
+		ClientCommandHandler.instance.registerCommand(new ChestQueryCommand(this));
 
 		logger.info("Enabled {}", NAME);
 	}
 
 	@Nonnull
 	@Override
-	public List<BlockPos> getChestPositions(PlayerInteractEvent event) {
+	public List<BlockPos> getChestPositions(World world, BlockPos position) {
 		List<BlockPos> chestPositions = new ArrayList<>();
 		BlockPos[] positions = {
-				event.getPos(),
-				event.getPos().north(),
-				event.getPos().east(),
-				event.getPos().south(),
-				event.getPos().west()
+				position,
+				position.north(),
+				position.east(),
+				position.south(),
+				position.west()
 		};
-		for (BlockPos position : positions) {
-			TileEntity tileEntity = event.getWorld().getTileEntity(position);
+		for (BlockPos pos : positions) {
+			TileEntity tileEntity = world.getTileEntity(pos);
 			if (tileEntity instanceof TileEntityChest) {
-				chestPositions.add(position);
+				chestPositions.add(pos);
 			}
 		}
 		return chestPositions;

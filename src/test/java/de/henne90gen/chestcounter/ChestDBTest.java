@@ -18,6 +18,35 @@ import static org.junit.Assert.*;
 public class ChestDBTest {
 
 	@Test
+	public void getLabelItemCount() throws IOException {
+		String filename = "./label-item-count-test.json";
+		String worldID = "TestWorld:0";
+		Chests chests = new Chests();
+
+		String testLabel = "test";
+		ChestContent chestContent1 = new ChestContent();
+		chestContent1.label = testLabel;
+		chestContent1.items.put("Glass", 1);
+		chests.put("1,2,3", chestContent1);
+
+		ChestContent chestContent2 = new ChestContent();
+		chestContent2.label = "another";
+		chestContent2.items.put("Glass", 2);
+		chestContent2.items.put("Sand", 3);
+		chests.put("4,5,6", chestContent2);
+
+		chestDB(filename).writeChests(chests, worldID);
+
+		Map<String, Integer> itemCounts = chestDB(filename).getItemCountsForLabel(worldID, testLabel);
+		assertNotNull(itemCounts);
+		assertEquals(1, itemCounts.size());
+		assertTrue(itemCounts.containsKey("Glass"));
+		assertEquals(new Integer(1), itemCounts.get("Glass"));
+
+		new File(filename).delete();
+	}
+
+	@Test
 	public void updateLabelNoFileExists() throws IOException, InterruptedException {
 		String filename = "./update-label-no-file-test.json";
 		String worldID = "TestWorld:0";
@@ -31,6 +60,38 @@ public class ChestDBTest {
 		chestDB(filename).updateLabel(chest).join();
 
 		assertFalse(new File(filename).exists());
+	}
+
+	@Test
+	public void saveDoesNotDropLabel() throws IOException, InterruptedException {
+		String filename = "./update-label-save-test.json";
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		String newChestLabel = "NewTestLabel";
+		chest.chestContent.label = newChestLabel;
+
+		File jsonFile = new File(filename);
+		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+
+		chestDB(filename).updateLabel(chest).join();
+
+		Chest saveChest = new Chest();
+		saveChest.id = chestID;
+		saveChest.worldID = worldID;
+		saveChest.chestContent.items.put("Glass", 5);
+		chestDB(filename).save(saveChest).join();
+
+		Chests chests = chestDB(filename).loadChests(worldID);
+		assertTrue(chests.containsKey(chestID));
+		assertEquals(newChestLabel, chests.get(chestID).label);
+
+		jsonFile.delete();
 	}
 
 	@Test

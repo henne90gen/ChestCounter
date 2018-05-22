@@ -97,7 +97,7 @@ public class ChestEventHandler {
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void interact(PlayerInteractEvent event) {
-		chestPositions = mod.getChestPositions(event);
+		chestPositions = mod.getChestPositions(event.getWorld(), event.getPos());
 	}
 
 	@SubscribeEvent

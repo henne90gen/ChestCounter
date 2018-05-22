@@ -12,6 +12,7 @@ import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import de.henne90gen.chestcounter.dtos.Chests;
+import javax.annotation.Nonnull;
 import net.minecraft.util.math.BlockPos;
 
 public class ChestDB {
@@ -179,5 +180,29 @@ public class ChestDB {
 			}
 			return 1;
 		};
+	}
+
+	public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label)
+			throws IOException
+	{
+		mod.log("Querying for " + label + " in world " + worldID);
+		Map<String, Integer> itemCounts = new LinkedHashMap<>();
+		Chests chests = loadChests(worldID);
+
+		for (ChestContent chestContent : chests.values()) {
+			if (!label.equals(chestContent.label)) {
+				continue;
+			}
+
+			for (Map.Entry<String, Integer> entry : chestContent.items.entrySet()) {
+				Integer amount = itemCounts.getOrDefault(entry.getKey(), 0);
+				amount += entry.getValue();
+				if (amount > 0) {
+					itemCounts.put(entry.getKey(), amount);
+				}
+			}
+		}
+
+		return itemCounts;
 	}
 }
