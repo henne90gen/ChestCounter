@@ -19,6 +19,8 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ChestEventHandler {
 
@@ -38,6 +40,7 @@ public class ChestEventHandler {
 	}
 
 	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void close(GuiOpenEvent event) {
 		if (event.getGui() == null && chest != null) {
 			chestDB.save(chest);
@@ -47,6 +50,7 @@ public class ChestEventHandler {
 	}
 
 	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void guiIsOpen(GuiContainerEvent event) {
 		if (shouldNotHandleEvent(event)) {
 			return;
@@ -91,14 +95,13 @@ public class ChestEventHandler {
 	}
 
 	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void interact(PlayerInteractEvent event) {
-		if (!event.getWorld().isRemote) {
-			return;
-		}
 		chestPositions = mod.getChestPositions(event);
 	}
 
 	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void harvestBlock(BlockEvent.BreakEvent event) {
 		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
 		if (tileEntity instanceof TileEntityChest) {

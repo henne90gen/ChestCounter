@@ -24,8 +24,8 @@ public class ChestDB {
 		this.mod = mod;
 	}
 
-	public void save(Chest chest) {
-		runInThread(() -> saveWrapper(chest));
+	public Thread save(Chest chest) {
+		return runInThread(() -> saveWrapper(chest));
 	}
 
 	private void saveWrapper(Chest chest) {
@@ -57,8 +57,8 @@ public class ChestDB {
 		}
 	}
 
-	public void delete(Chest chest) {
-		runInThread(() -> deleteWrapper(chest));
+	public Thread delete(Chest chest) {
+		return runInThread(() -> deleteWrapper(chest));
 	}
 
 	private void deleteWrapper(Chest chest) {
@@ -83,11 +83,11 @@ public class ChestDB {
 		}
 	}
 
-	public void updateLabel(Chest chest) {
-		runInThread(() -> updateLabelWrapper(chest));
+	public Thread updateLabel(Chest chest) {
+		return runInThread(() -> updateLabelWrapper(chest));
 	}
 
-	public void updateLabelWrapper(Chest chest) {
+	private void updateLabelWrapper(Chest chest) {
 		mod.log("Updating label of " + chest.id + " to " + chest.chestContent.label);
 		try {
 			Chests chests = loadChests(chest.worldID);
@@ -155,10 +155,11 @@ public class ChestDB {
 		return String.join(":", positionStrings);
 	}
 
-	private void runInThread(Runnable runnable) {
+	private Thread runInThread(Runnable runnable) {
 		Thread thread = new Thread(runnable);
 		thread.setDaemon(true);
 		thread.start();
+		return thread;
 	}
 
 	public Comparator<BlockPos> getBlockPosComparator() {

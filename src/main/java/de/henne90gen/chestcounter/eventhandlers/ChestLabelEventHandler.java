@@ -9,6 +9,8 @@ import de.henne90gen.chestcounter.dtos.Chest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ChestLabelEventHandler {
 
@@ -24,6 +26,7 @@ public class ChestLabelEventHandler {
 	}
 
 	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void interact(PlayerInteractEvent event) {
 		if (mod.label == null) {
 			return;
@@ -34,6 +37,7 @@ public class ChestLabelEventHandler {
 		chest.id = chestDB.createChestID(chestPositions);
 		chest.chestContent.label = mod.label;
 		mod.label = null;
+
 		chestDB.updateLabel(chest);
 	}
 }

@@ -3,11 +3,9 @@ package de.henne90gen.chestcounter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
+import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import de.henne90gen.chestcounter.dtos.Chests;
@@ -18,6 +16,142 @@ import static org.junit.Assert.*;
 
 @SuppressWarnings("ALL")
 public class ChestDBTest {
+
+	@Test
+	public void updateLabelNoFileExists() throws IOException, InterruptedException {
+		String filename = "./update-label-no-file-test.json";
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		chest.chestContent.label = chestLabel;
+
+		chestDB(filename).updateLabel(chest).join();
+
+		assertFalse(new File(filename).exists());
+	}
+
+	@Test
+	public void updateLabel() throws IOException, InterruptedException {
+		String filename = "./update-label-test.json";
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		String newChestLabel = "NewTestLabel";
+		chest.chestContent.label = newChestLabel;
+
+		File jsonFile = new File(filename);
+		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+
+		chestDB(filename).updateLabel(chest).join();
+
+		Chests chests = chestDB(filename).loadChests(worldID);
+		assertTrue(chests.containsKey(chestID));
+		assertEquals(newChestLabel, chests.get(chestID).label);
+
+		jsonFile.delete();
+	}
+
+	@Test
+	public void delete() throws IOException, InterruptedException {
+		String filename = "./delete-test.json";
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+
+		File jsonFile = new File(filename);
+		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+
+		chestDB(filename).delete(chest).join();
+
+		Chests chests = chestDB(filename).loadChests(worldID);
+		assertNotNull(chests);
+		assertEquals(0, chests.size());
+
+		jsonFile.delete();
+	}
+
+	@Test
+	public void deleteNoFileExists() {
+		Chest chest = new Chest();
+		chest.worldID = "TestWorld:0";
+		chest.id = "1,2,3";
+		String filename = "./delete-no-file-test.json";
+		chestDB(filename).delete(chest);
+		assertFalse(new File(filename).exists());
+	}
+
+	@Test
+	public void saveFileExists() throws InterruptedException, IOException {
+		String filename = "./save-no-file-test.json";
+		File chestCounter = new File(filename);
+		String chestID = "1,2,3";
+		String worldID = "TestWorld:0";
+		writeTestFile(chestCounter, worldID, chestID, "TestLabel", "Sand", 5);
+
+		Chest chest = new Chest();
+		chest.id = chestID;
+		chest.worldID = worldID;
+		String itemName = "Glass";
+		int itemAmount = 5;
+		chest.chestContent.items.put(itemName, itemAmount);
+
+		chestDB(filename).save(chest).join();
+
+		Chests chests = chestDB(filename).loadChests(worldID);
+		assertNotNull(chests);
+		assertTrue(chests.containsKey(chest.id));
+		Map<String, Integer> items = chests.get(chest.id).items;
+		assertNotNull(items);
+		assertEquals(1, items.size());
+		assertTrue(items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), items.get(itemName));
+
+		new File(filename).delete();
+	}
+
+	@Test
+	public void saveNoFileExists() throws IOException, InterruptedException {
+		String filename = "./save-no-file-test.json";
+		Chest chest = new Chest();
+		chest.id = "1,2,3";
+		String worldID = "TestWorld:0";
+		chest.worldID = worldID;
+		String itemName = "Glass";
+		int itemAmount = 5;
+		chest.chestContent.items.put(itemName, itemAmount);
+		String chestLabel = "TestLabel";
+		chest.chestContent.label = chestLabel;
+
+		chestDB(filename).save(chest).join();
+
+		File jsonFile = new File(filename);
+		assertTrue(jsonFile.exists());
+		Chests chests = chestDB(filename).loadChests(worldID);
+		assertNotNull(chests);
+		assertTrue(chests.containsKey(chest.id));
+		assertEquals(chestLabel, chests.get(chest.id).label);
+		Map<String, Integer> items = chests.get(chest.id).items;
+		assertNotNull(items);
+		assertEquals(1, items.size());
+		assertTrue(items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), items.get(itemName));
+
+		jsonFile.delete();
+	}
+
 	@Test
 	public void loadChestsWithNoFile() {
 		String filename = "./loads-chests-no-file-test.json";
