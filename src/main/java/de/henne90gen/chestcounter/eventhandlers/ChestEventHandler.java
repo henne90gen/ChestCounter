@@ -1,7 +1,9 @@
-package de.henne90gen.chestcounter;
+package de.henne90gen.chestcounter.eventhandlers;
 
 import java.util.*;
 
+import de.henne90gen.chestcounter.ChestCounter;
+import de.henne90gen.chestcounter.ChestDB;
 import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import net.minecraft.client.Minecraft;
@@ -23,20 +25,22 @@ public class ChestEventHandler {
 	private static final int INVENTORY_SIZE = 36;
 
 	private final ChestCounter mod;
+	private final ChestDB chestDB;
 
-	private final List<BlockPos> chestPositions;
+	private List<BlockPos> chestPositions;
 
 	private Chest chest;
 
 	public ChestEventHandler(ChestCounter mod) {
 		this.mod = mod;
 		this.chestPositions = new ArrayList<>();
+		this.chestDB = new ChestDB(mod);
 	}
 
 	@SubscribeEvent
 	public void close(GuiOpenEvent event) {
 		if (event.getGui() == null && chest != null) {
-			ItemDB.save(chest);
+			chestDB.save(chest);
 			chest = null;
 			chestPositions.clear();
 		}
@@ -54,7 +58,7 @@ public class ChestEventHandler {
 
 			chest = new Chest();
 			chest.worldID = mod.getWorldID();
-			chest.id = ItemDB.buildID(chestPositions);
+			chest.id = chestDB.createChestID(chestPositions);
 			chest.chestContent = countItems(currentContainer);
 		}
 	}
@@ -91,13 +95,7 @@ public class ChestEventHandler {
 		if (!event.getWorld().isRemote) {
 			return;
 		}
-
-		chestPositions.clear();
-		addChestPosition(event, event.getPos());
-		addChestPosition(event, event.getPos().north());
-		addChestPosition(event, event.getPos().east());
-		addChestPosition(event, event.getPos().south());
-		addChestPosition(event, event.getPos().west());
+		chestPositions = mod.getChestPositions(event);
 	}
 
 	@SubscribeEvent
@@ -106,15 +104,8 @@ public class ChestEventHandler {
 		if (tileEntity instanceof TileEntityChest) {
 			Chest chestToDelete = new Chest();
 			chestToDelete.worldID = mod.getWorldID();
-			chestToDelete.id = ItemDB.buildID(Collections.singletonList(event.getPos()));
-			ItemDB.delete(chestToDelete);
-		}
-	}
-
-	private void addChestPosition(PlayerInteractEvent event, BlockPos position) {
-		TileEntity tileEntity = event.getWorld().getTileEntity(position);
-		if (tileEntity instanceof TileEntityChest) {
-			chestPositions.add(position);
+			chestToDelete.id = chestDB.createChestID(Collections.singletonList(event.getPos()));
+			chestDB.delete(chestToDelete);
 		}
 	}
 }

@@ -4,4 +4,7 @@ public class Chest {
 	public String worldID;
 	public String id;
 	public ChestContent chestContent;
+	public Chest() {
+		chestContent = new ChestContent();
+	}
 }
