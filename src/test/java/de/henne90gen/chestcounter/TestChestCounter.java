@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 public class TestChestCounter implements IChestCounter {
@@ -17,7 +18,7 @@ public class TestChestCounter implements IChestCounter {
 
 	@Nonnull
 	@Override
-	public List<BlockPos> getChestPositions(PlayerInteractEvent event) {
+	public List<BlockPos> getChestPositions(World world, BlockPos position) {
 		return Collections.emptyList();
 	}
 
