@@ -108,7 +108,46 @@ public class ChestEventHandler {
 			Chest chestToDelete = new Chest();
 			chestToDelete.worldID = mod.getWorldID();
 			chestToDelete.id = chestDB.createChestID(Collections.singletonList(event.getPos()));
-			chestDB.delete(chestToDelete);
+
+			ChestContent chestContent = chestDB.getChestContent(chestToDelete);
+
+			try {
+				chestDB.delete(chestToDelete).join();
+			} catch (InterruptedException ignored) {
+			}
+
+			if (chestContent == null) {
+				return;
+			}
+			BlockPos[] positions = {
+					event.getPos().north(),
+					event.getPos().east(),
+					event.getPos().south(),
+					event.getPos().west()
+			};
+			for (BlockPos position : positions) {
+				TileEntity entity = event.getWorld().getTileEntity(position);
+				if (entity instanceof TileEntityChest) {
+					Chest chest = new Chest();
+					chest.worldID = mod.getWorldID();
+					chest.id = chestDB.createChestID(Collections.singletonList(position));
+					chest.chestContent.label = chestContent.label;
+					chestDB.save(chest);
+					break;
+				}
+			}
+		}
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void place(BlockEvent.PlaceEvent event) {
+		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
+		if (tileEntity instanceof TileEntityChest) {
+			Chest chest = new Chest();
+			chest.worldID = mod.getWorldID();
+			chest.id = chestDB.createChestID(mod.getChestPositions(event.getWorld(), event.getPos()));
+			chestDB.save(chest);
 		}
 	}
 }

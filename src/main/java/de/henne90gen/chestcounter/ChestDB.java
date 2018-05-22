@@ -205,4 +205,41 @@ public class ChestDB {
 
 		return itemCounts;
 	}
+
+	public Map<String, List<String>> getAllLabels(String worldID) {
+		try {
+			Chests chests = loadChests(worldID);
+			return chests.values()
+					.stream()
+					.map(chestContent -> chestContent.label)
+					.distinct()
+					.collect(Collectors.toMap(label -> label, label -> findChests(chests, label)));
+		} catch (IOException e) {
+			mod.logError(e);
+			return Collections.emptyMap();
+		}
+	}
+
+	private List<String> findChests(Chests chests, String label) {
+		return chests.entrySet()
+				.stream()
+				.filter(entry -> label.equals(entry.getValue().label))
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toList());
+	}
+
+	public ChestContent getChestContent(Chest chest) {
+		try {
+			Chests chests = loadChests(chest.worldID);
+			for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
+				if (entry.getKey().contains(chest.id) || chest.id.contains(entry.getKey())) {
+					return entry.getValue();
+				}
+			}
+			return null;
+		} catch (IOException e) {
+			mod.logError(e);
+			return null;
+		}
+	}
 }

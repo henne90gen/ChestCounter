@@ -3,6 +3,7 @@ package de.henne90gen.chestcounter.commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.ChestDB;
@@ -37,8 +38,11 @@ public class ChestLabelCommand implements ICommand {
 		EntityPlayerSP player = FMLClientHandler.instance().getClient().player;
 		Entity commandSenderEntity = sender.getCommandSenderEntity();
 
-		if (args.length != 1 || commandSenderEntity == null) {
+		if (args.length > 1 || commandSenderEntity == null) {
 			player.sendMessage(new TextComponentString(getUsage(sender)));
+			return;
+		} else if (args.length == 0) {
+			printLabels(player);
 			return;
 		}
 
@@ -63,6 +67,24 @@ public class ChestLabelCommand implements ICommand {
 			player.sendMessage(new TextComponentString("Updated label to " + label));
 		} else {
 			printLookAtChestMessage(player);
+		}
+	}
+
+	private void printLabels(EntityPlayerSP player) {
+		Map<String, List<String>> labels = chestDB.getAllLabels(mod.getWorldID());
+		for (Map.Entry<String, List<String>> entry : labels.entrySet()) {
+			String label = entry.getKey();
+			if (label.isEmpty()) {
+				label = "No Label";
+			}
+
+			StringBuilder chestIDs = new StringBuilder();
+			for (String chestID : entry.getValue()) {
+				chestIDs.append("(").append(chestID).append("), ");
+			}
+			String chestIDsString = chestIDs.substring(0, chestIDs.length() - 2);
+
+			player.sendMessage(new TextComponentString(label + ": " + chestIDsString));
 		}
 	}
 
