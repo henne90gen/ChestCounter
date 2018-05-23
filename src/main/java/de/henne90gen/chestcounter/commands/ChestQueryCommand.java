@@ -37,7 +37,7 @@ public class ChestQueryCommand implements ICommand {
 		}
 		try {
 			String label = args[0];
-			Map<String, Integer> itemCounts = mod.chestDB.getItemCountsForLabel(Helper.instance.getWorldID(), label);
+			Map<String, Integer> itemCounts = mod.chestService.getItemCountsForLabel(Helper.instance.getWorldID(), label);
 			mod.log("Query results: " + itemCounts);
 
 			if (itemCounts.size() == 0) {

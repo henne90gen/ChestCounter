@@ -1,31 +1,33 @@
-package de.henne90gen.chestcounter;
+package de.henne90gen.chestcounter.service;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.google.gson.Gson;
-import de.henne90gen.chestcounter.dtos.*;
+import de.henne90gen.chestcounter.IChestCounter;
+import de.henne90gen.chestcounter.db.IChestDB;
+import de.henne90gen.chestcounter.dtos.AmountResult;
+import de.henne90gen.chestcounter.dtos.Chest;
+import de.henne90gen.chestcounter.dtos.ChestContent;
+import de.henne90gen.chestcounter.dtos.Chests;
 import javax.annotation.Nonnull;
 
-public class ChestDB implements IChestDB {
-
-	private final Gson gson = new Gson();
+public class ChestService implements IChestService {
 
 	private final IChestCounter mod;
 
-	public ChestDB(IChestCounter mod) {
+	private final IChestDB db;
+
+	public ChestService(IChestCounter mod, IChestDB db) {
 		this.mod = mod;
+		this.db = db;
 	}
 
 	@Override
 	public void save(Chest chest) {
 		mod.log("Saving " + chest.id + " with " + chest.chestContent.items.toString());
 		try {
-			Chests chests = loadChests(chest.worldID);
+			Chests chests = db.loadChests(chest.worldID);
 			if (chests == null) {
 				chests = new Chests();
 			}
@@ -45,7 +47,7 @@ public class ChestDB implements IChestDB {
 
 			chests.put(chest.id, chest.chestContent);
 
-			writeChests(chests, chest.worldID);
+			db.saveChests(chests, chest.worldID);
 		} catch (Exception e) {
 			mod.logError(e);
 		}
@@ -55,7 +57,7 @@ public class ChestDB implements IChestDB {
 	public void delete(Chest chest) {
 		mod.log("Deleting " + chest.id);
 		try {
-			Chests chests = loadChests(chest.worldID);
+			Chests chests = db.loadChests(chest.worldID);
 			if (chests == null) {
 				return;
 			}
@@ -68,7 +70,7 @@ public class ChestDB implements IChestDB {
 				}
 			}
 
-			writeChests(chests, chest.worldID);
+			db.saveChests(chests, chest.worldID);
 		} catch (Exception e) {
 			mod.logError(e);
 		}
@@ -78,7 +80,7 @@ public class ChestDB implements IChestDB {
 	public void updateLabel(Chest chest) {
 		mod.log("Updating label of " + chest.id + " to " + chest.chestContent.label);
 		try {
-			Chests chests = loadChests(chest.worldID);
+			Chests chests = db.loadChests(chest.worldID);
 			if (chests == null) {
 				return;
 			}
@@ -89,47 +91,10 @@ public class ChestDB implements IChestDB {
 				}
 			}
 
-			writeChests(chests, chest.worldID);
+			db.saveChests(chests, chest.worldID);
 		} catch (Exception e) {
 			mod.logError(e);
 		}
-	}
-
-	public Chests loadChests(String worldID) throws IOException {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			return null;
-		}
-		Chests chests = worlds.get(worldID);
-		if (chests == null) {
-			return null;
-		}
-		return chests;
-	}
-
-	public void writeChests(Chests chests, String worldID) throws IOException {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			worlds = new ChestWorlds();
-		}
-		worlds.put(worldID, chests);
-
-		File jsonFile = new File(mod.getChestDBFilename());
-		try (FileWriter writer = new FileWriter(jsonFile)) {
-			gson.toJson(worlds, writer);
-		}
-	}
-
-	public ChestWorlds readChestWorlds() throws IOException {
-		File jsonFile = new File(mod.getChestDBFilename());
-		if (!jsonFile.exists()) {
-			return null;
-		}
-		ChestWorlds worlds;
-		try (FileReader reader = new FileReader(jsonFile)) {
-			worlds = gson.fromJson(reader, ChestWorlds.class);
-		}
-		return worlds;
 	}
 
 	@Override
@@ -138,7 +103,7 @@ public class ChestDB implements IChestDB {
 	{
 		mod.log("Querying for " + label + " in world " + worldID);
 		Map<String, Integer> itemCounts = new LinkedHashMap<>();
-		Chests chests = loadChests(worldID);
+		Chests chests = db.loadChests(worldID);
 
 		for (ChestContent chestContent : chests.values()) {
 			if (!label.equals(chestContent.label)) {
@@ -160,7 +125,7 @@ public class ChestDB implements IChestDB {
 	@Override
 	public Map<String, List<String>> getAllLabels(String worldID) {
 		try {
-			Chests chests = loadChests(worldID);
+			Chests chests = db.loadChests(worldID);
 			return chests.values()
 					.stream()
 					.map(chestContent -> chestContent.label)
@@ -172,8 +137,7 @@ public class ChestDB implements IChestDB {
 		}
 	}
 
-	@Override
-	public List<String> findChests(Chests chests, String label) {
+	private List<String> findChests(Chests chests, String label) {
 		return chests.entrySet()
 				.stream()
 				.filter(entry -> label.equals(entry.getValue().label))
@@ -184,7 +148,7 @@ public class ChestDB implements IChestDB {
 	@Override
 	public ChestContent searchForChest(Chest chest) {
 		try {
-			Chests chests = loadChests(chest.worldID);
+			Chests chests = db.loadChests(chest.worldID);
 			for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
 				if (entry.getKey().contains(chest.id) || chest.id.contains(entry.getKey())) {
 					return entry.getValue();
@@ -200,7 +164,7 @@ public class ChestDB implements IChestDB {
 	@Override
 	public Map<String, AmountResult> getItemCounts(String worldID, String queryString) {
 		try {
-			Chests chests = loadChests(worldID);
+			Chests chests = db.loadChests(worldID);
 			if (chests == null) {
 				return Collections.emptyMap();
 			}
@@ -221,5 +185,15 @@ public class ChestDB implements IChestDB {
 			mod.logError(e);
 		}
 		return Collections.emptyMap();
+	}
+
+	@Override
+	public Chests getChests(String worldID) {
+		try {
+			return db.loadChests(worldID);
+		} catch (IOException e) {
+			mod.logError(e);
+			return new Chests();
+		}
 	}
 }

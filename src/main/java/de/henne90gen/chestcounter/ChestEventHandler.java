@@ -2,8 +2,6 @@ package de.henne90gen.chestcounter;
 
 import java.util.*;
 
-import de.henne90gen.chestcounter.ChestCounter;
-import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import net.minecraft.client.Minecraft;
@@ -41,9 +39,11 @@ public class ChestEventHandler {
 	@SideOnly(Side.CLIENT)
 	public void close(GuiOpenEvent event) {
 		if (event.getGui() == null && chest != null) {
-			Helper.instance.runInThread(() -> mod.chestDB.save(chest));
-			chest = null;
-			chestPositions.clear();
+			Helper.instance.runInThread(() -> {
+				mod.chestService.save(chest);
+				chest = null;
+				chestPositions.clear();
+			});
 		}
 	}
 
@@ -107,9 +107,9 @@ public class ChestEventHandler {
 			chestToDelete.worldID = Helper.instance.getWorldID();
 			chestToDelete.id = Helper.instance.createChestID(Collections.singletonList(event.getPos()));
 
-			ChestContent chestContent = mod.chestDB.searchForChest(chestToDelete);
+			ChestContent chestContent = mod.chestService.searchForChest(chestToDelete);
 
-			mod.chestDB.delete(chestToDelete);
+			mod.chestService.delete(chestToDelete);
 
 			if (chestContent == null) {
 				return;
@@ -127,7 +127,7 @@ public class ChestEventHandler {
 					chest.worldID = Helper.instance.getWorldID();
 					chest.id = Helper.instance.createChestID(Collections.singletonList(position));
 					chest.chestContent.label = chestContent.label;
-					Helper.instance.runInThread(() -> mod.chestDB.save(chest));
+					Helper.instance.runInThread(() -> mod.chestService.save(chest));
 					break;
 				}
 			}
@@ -143,7 +143,7 @@ public class ChestEventHandler {
 			chest.worldID = Helper.instance.getWorldID();
 			List<BlockPos> chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
 			chest.id = Helper.instance.createChestID(chestPositions);
-			Helper.instance.runInThread(() -> mod.chestDB.save(chest));
+			Helper.instance.runInThread(() -> mod.chestService.save(chest));
 		}
 	}
 }

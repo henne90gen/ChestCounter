@@ -3,6 +3,9 @@ package de.henne90gen.chestcounter;
 import de.henne90gen.chestcounter.commands.ChestCommand;
 import de.henne90gen.chestcounter.commands.ChestLabelCommand;
 import de.henne90gen.chestcounter.commands.ChestQueryCommand;
+import de.henne90gen.chestcounter.db.ChestDB;
+import de.henne90gen.chestcounter.db.ChestDBCache;
+import de.henne90gen.chestcounter.service.ChestService;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -19,13 +22,13 @@ public class ChestCounter implements IChestCounter {
 
 	private Logger logger;
 
-	public ChestDB chestDB;
+	public ChestService chestService;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		logger = event.getModLog();
 
-		chestDB = new ChestDB(this);
+		chestService = new ChestService(this, new ChestDBCache(new ChestDB(getChestDBFilename())));
 
 		// register event handler
 		MinecraftForge.EVENT_BUS.register(new ChestEventHandler(this));

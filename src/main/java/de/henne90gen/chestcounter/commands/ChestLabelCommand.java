@@ -61,7 +61,7 @@ public class ChestLabelCommand implements ICommand {
 			chest.worldID = Helper.instance.getWorldID();
 			chest.chestContent.label = label;
 
-			Helper.instance.runInThread(() -> mod.chestDB.updateLabel(chest));
+			Helper.instance.runInThread(() -> mod.chestService.updateLabel(chest));
 			player.sendMessage(new TextComponentString("Updated label to " + label));
 		} else {
 			printLookAtChestMessage(player);
@@ -69,7 +69,7 @@ public class ChestLabelCommand implements ICommand {
 	}
 
 	private void printLabels(EntityPlayerSP player) {
-		Map<String, List<String>> labels = mod.chestDB.getAllLabels(Helper.instance.getWorldID());
+		Map<String, List<String>> labels = mod.chestService.getAllLabels(Helper.instance.getWorldID());
 		for (Map.Entry<String, List<String>> entry : labels.entrySet()) {
 			String label = entry.getKey();
 			if (label.isEmpty()) {

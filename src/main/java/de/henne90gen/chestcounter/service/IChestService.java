@@ -1,4 +1,4 @@
-package de.henne90gen.chestcounter;
+package de.henne90gen.chestcounter.service;
 
 import java.io.IOException;
 import java.util.List;
@@ -10,7 +10,7 @@ import de.henne90gen.chestcounter.dtos.ChestContent;
 import de.henne90gen.chestcounter.dtos.Chests;
 import javax.annotation.Nonnull;
 
-public interface IChestDB {
+public interface IChestService {
 	void save(Chest chest);
 
 	void delete(Chest chest);
@@ -22,9 +22,9 @@ public interface IChestDB {
 
 	Map<String, List<String>> getAllLabels(String worldID);
 
-	List<String> findChests(Chests chests, String label);
-
 	ChestContent searchForChest(Chest chest);
 
 	Map<String, AmountResult> getItemCounts(String worldID, String queryString);
+
+	Chests getChests(String worldID);
 }

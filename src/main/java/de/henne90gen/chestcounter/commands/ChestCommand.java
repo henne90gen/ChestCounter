@@ -35,7 +35,7 @@ public class ChestCommand implements ICommand {
 			return;
 		}
 		String queryString = args[0];
-		Map<String, AmountResult> amount = mod.chestDB.getItemCounts(Helper.instance.getWorldID(), queryString);
+		Map<String, AmountResult> amount = mod.chestService.getItemCounts(Helper.instance.getWorldID(), queryString);
 
 		if (amount.entrySet().size() == 0) {
 			printNoData(player);
