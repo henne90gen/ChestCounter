@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.henne90gen.chestcounter.ChestCounter;
-import de.henne90gen.chestcounter.ChestDB;
+import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.dtos.Chest;
 import javax.annotation.Nullable;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -26,11 +26,9 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 public class ChestLabelCommand implements ICommand {
 
 	private final ChestCounter mod;
-	private final ChestDB chestDB;
 
 	public ChestLabelCommand(ChestCounter mod) {
 		this.mod = mod;
-		this.chestDB = new ChestDB(mod);
 	}
 
 	@Override
@@ -55,15 +53,15 @@ public class ChestLabelCommand implements ICommand {
 		TileEntity tileEntity = commandSenderEntity.world.getTileEntity(blockPos);
 		if (tileEntity instanceof TileEntityChest) {
 			String label = args[0];
-			List<BlockPos> chestPositions = mod.getChestPositions(commandSenderEntity.world,
+			List<BlockPos> chestPositions = Helper.instance.getChestPositions(commandSenderEntity.world,
 					blockPos);
 
 			Chest chest = new Chest();
-			chest.id = chestDB.createChestID(chestPositions);
-			chest.worldID = mod.getWorldID();
+			chest.id = Helper.instance.createChestID(chestPositions);
+			chest.worldID = Helper.instance.getWorldID();
 			chest.chestContent.label = label;
 
-			chestDB.updateLabel(chest);
+			Helper.instance.runInThread(() -> mod.chestDB.updateLabel(chest));
 			player.sendMessage(new TextComponentString("Updated label to " + label));
 		} else {
 			printLookAtChestMessage(player);
@@ -71,7 +69,7 @@ public class ChestLabelCommand implements ICommand {
 	}
 
 	private void printLabels(EntityPlayerSP player) {
-		Map<String, List<String>> labels = chestDB.getAllLabels(mod.getWorldID());
+		Map<String, List<String>> labels = mod.chestDB.getAllLabels(Helper.instance.getWorldID());
 		for (Map.Entry<String, List<String>> entry : labels.entrySet()) {
 			String label = entry.getKey();
 			if (label.isEmpty()) {

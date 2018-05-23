@@ -10,12 +10,25 @@ import de.henne90gen.chestcounter.dtos.ChestContent;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import de.henne90gen.chestcounter.dtos.Chests;
 import net.minecraft.util.math.BlockPos;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 @SuppressWarnings("ALL")
 public class ChestDBTest {
+
+	@Test
+	@Ignore
+	public void getAllLabels() {
+
+	}
+
+	@Test
+	@Ignore
+	public void searchForChest() {
+
+	}
 
 	@Test
 	public void getLabelItemCount() throws IOException {
@@ -57,7 +70,7 @@ public class ChestDBTest {
 		chest.id = chestID;
 		chest.chestContent.label = chestLabel;
 
-		chestDB(filename).updateLabel(chest).join();
+		chestDB(filename).updateLabel(chest);
 
 		assertFalse(new File(filename).exists());
 	}
@@ -79,13 +92,13 @@ public class ChestDBTest {
 		File jsonFile = new File(filename);
 		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
 
-		chestDB(filename).updateLabel(chest).join();
+		chestDB(filename).updateLabel(chest);
 
 		Chest saveChest = new Chest();
 		saveChest.id = chestID;
 		saveChest.worldID = worldID;
 		saveChest.chestContent.items.put("Glass", 5);
-		chestDB(filename).save(saveChest).join();
+		chestDB(filename).save(saveChest);
 
 		Chests chests = chestDB(filename).loadChests(worldID);
 		assertTrue(chests.containsKey(chestID));
@@ -111,7 +124,7 @@ public class ChestDBTest {
 		File jsonFile = new File(filename);
 		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
 
-		chestDB(filename).updateLabel(chest).join();
+		chestDB(filename).updateLabel(chest);
 
 		Chests chests = chestDB(filename).loadChests(worldID);
 		assertTrue(chests.containsKey(chestID));
@@ -135,7 +148,7 @@ public class ChestDBTest {
 		File jsonFile = new File(filename);
 		writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
 
-		chestDB(filename).delete(chest).join();
+		chestDB(filename).delete(chest);
 
 		Chests chests = chestDB(filename).loadChests(worldID);
 		assertNotNull(chests);
@@ -169,7 +182,7 @@ public class ChestDBTest {
 		int itemAmount = 5;
 		chest.chestContent.items.put(itemName, itemAmount);
 
-		chestDB(filename).save(chest).join();
+		chestDB(filename).save(chest);
 
 		Chests chests = chestDB(filename).loadChests(worldID);
 		assertNotNull(chests);
@@ -196,7 +209,7 @@ public class ChestDBTest {
 		String chestLabel = "TestLabel";
 		chest.chestContent.label = chestLabel;
 
-		chestDB(filename).save(chest).join();
+		chestDB(filename).save(chest);
 
 		File jsonFile = new File(filename);
 		assertTrue(jsonFile.exists());
@@ -359,73 +372,5 @@ public class ChestDBTest {
 
 	private ChestDB chestDB() {
 		return chestDB("");
-	}
-
-	@Test
-	public void canSortBlockPositionsX() {
-		canSortBlockPositions(2, 2, 3);
-	}
-
-	@Test
-	public void canSortBlockPositionsY() {
-		canSortBlockPositions(1, 3, 3);
-	}
-
-	@Test
-	public void canSortBlockPositionsZ() {
-		canSortBlockPositions(1, 2, 4);
-	}
-
-	@Test
-	public void canSortBlockPositionsEqual() {
-		canSortBlockPositions(1, 2, 3);
-	}
-
-	@Test
-	public void canSortBlockPositionsZSmaller() {
-		canSortBlockPositions(1, 2, 2, true);
-	}
-
-	private void canSortBlockPositions(int x2, int y2, int z2) {
-		canSortBlockPositions(x2, y2, z2, false);
-	}
-
-	private void canSortBlockPositions(int x2, int y2, int z2, boolean reverse) {
-		Comparator<BlockPos> blockPosComparator = chestDB().getBlockPosComparator();
-		BlockPos blockPos1 = new BlockPos(1, 2, 3);
-		BlockPos blockPos2 = new BlockPos(x2, y2, z2);
-		List<BlockPos> blockPos = new ArrayList<>();
-		blockPos.add(blockPos2);
-		blockPos.add(blockPos1);
-
-		blockPos.sort(blockPosComparator);
-
-		if (reverse) {
-			assertEquals(blockPos1, blockPos.get(1));
-			assertEquals(blockPos2, blockPos.get(0));
-		} else {
-			assertEquals(blockPos1, blockPos.get(0));
-			assertEquals(blockPos2, blockPos.get(1));
-		}
-	}
-
-	@Test
-	public void createsChestIDForDoubleChestCorrectly() {
-		BlockPos blockPos1 = new BlockPos(1, 2, 3);
-		BlockPos blockPos2 = new BlockPos(2, 2, 3);
-		List<BlockPos> blockPos = new ArrayList<>();
-		blockPos.add(blockPos2);
-		blockPos.add(blockPos1);
-
-		String chestID = chestDB().createChestID(blockPos);
-		assertEquals("1,2,3:2,2,3", chestID);
-	}
-
-	@Test
-	public void createsChestIDForSingleChestCorrectly() {
-		String chestID = chestDB().createChestID(
-				Collections.singletonList(new BlockPos(1, 2, 3))
-		);
-		assertEquals("1,2,3", chestID);
 	}
 }

@@ -8,14 +8,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-import de.henne90gen.chestcounter.dtos.Chest;
-import de.henne90gen.chestcounter.dtos.ChestContent;
-import de.henne90gen.chestcounter.dtos.ChestWorlds;
-import de.henne90gen.chestcounter.dtos.Chests;
+import de.henne90gen.chestcounter.dtos.*;
 import javax.annotation.Nonnull;
-import net.minecraft.util.math.BlockPos;
 
-public class ChestDB {
+public class ChestDB implements IChestDB {
 
 	private final Gson gson = new Gson();
 
@@ -25,11 +21,8 @@ public class ChestDB {
 		this.mod = mod;
 	}
 
-	public Thread save(Chest chest) {
-		return runInThread(() -> saveWrapper(chest));
-	}
-
-	private void saveWrapper(Chest chest) {
+	@Override
+	public void save(Chest chest) {
 		mod.log("Saving " + chest.id + " with " + chest.chestContent.items.toString());
 		try {
 			Chests chests = loadChests(chest.worldID);
@@ -58,11 +51,8 @@ public class ChestDB {
 		}
 	}
 
-	public Thread delete(Chest chest) {
-		return runInThread(() -> deleteWrapper(chest));
-	}
-
-	private void deleteWrapper(Chest chest) {
+	@Override
+	public void delete(Chest chest) {
 		mod.log("Deleting " + chest.id);
 		try {
 			Chests chests = loadChests(chest.worldID);
@@ -84,11 +74,8 @@ public class ChestDB {
 		}
 	}
 
-	public Thread updateLabel(Chest chest) {
-		return runInThread(() -> updateLabelWrapper(chest));
-	}
-
-	private void updateLabelWrapper(Chest chest) {
+	@Override
+	public void updateLabel(Chest chest) {
 		mod.log("Updating label of " + chest.id + " to " + chest.chestContent.label);
 		try {
 			Chests chests = loadChests(chest.worldID);
@@ -145,43 +132,7 @@ public class ChestDB {
 		return worlds;
 	}
 
-	public String createChestID(List<BlockPos> positions) {
-		// copy and sort incoming list
-		positions = new ArrayList<>(positions);
-		positions.sort(getBlockPosComparator());
-
-		List<String> positionStrings = positions.stream()
-				.map(blockPos -> blockPos.getX() + "," + blockPos.getY() + "," + blockPos.getZ())
-				.collect(Collectors.toList());
-		return String.join(":", positionStrings);
-	}
-
-	private Thread runInThread(Runnable runnable) {
-		Thread thread = new Thread(runnable);
-		thread.setDaemon(true);
-		thread.start();
-		return thread;
-	}
-
-	public Comparator<BlockPos> getBlockPosComparator() {
-		return (block, other) -> {
-			if (block.getX() < other.getX()) {
-				return -1;
-			} else if (block.getX() == other.getX()) {
-				if (block.getY() < other.getY()) {
-					return -1;
-				} else if (block.getY() == other.getY()) {
-					if (block.getZ() < other.getZ()) {
-						return -1;
-					} else if (block.getZ() == other.getZ()) {
-						return 0;
-					}
-				}
-			}
-			return 1;
-		};
-	}
-
+	@Override
 	public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label)
 			throws IOException
 	{
@@ -206,6 +157,7 @@ public class ChestDB {
 		return itemCounts;
 	}
 
+	@Override
 	public Map<String, List<String>> getAllLabels(String worldID) {
 		try {
 			Chests chests = loadChests(worldID);
@@ -220,7 +172,8 @@ public class ChestDB {
 		}
 	}
 
-	private List<String> findChests(Chests chests, String label) {
+	@Override
+	public List<String> findChests(Chests chests, String label) {
 		return chests.entrySet()
 				.stream()
 				.filter(entry -> label.equals(entry.getValue().label))
@@ -228,7 +181,8 @@ public class ChestDB {
 				.collect(Collectors.toList());
 	}
 
-	public ChestContent getChestContent(Chest chest) {
+	@Override
+	public ChestContent searchForChest(Chest chest) {
 		try {
 			Chests chests = loadChests(chest.worldID);
 			for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
@@ -241,5 +195,31 @@ public class ChestDB {
 			mod.logError(e);
 			return null;
 		}
+	}
+
+	@Override
+	public Map<String, AmountResult> getItemCounts(String worldID, String queryString) {
+		try {
+			Chests chests = loadChests(worldID);
+			if (chests == null) {
+				return Collections.emptyMap();
+			}
+
+			Map<String, AmountResult> amount = new LinkedHashMap<>();
+			for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
+				for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
+					if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
+						AmountResult itemAmount = amount.getOrDefault(itemEntry.getKey(), new AmountResult());
+						itemAmount.amount += itemEntry.getValue();
+						itemAmount.labels.add(chestEntry.getValue().label);
+						amount.put(itemEntry.getKey(), itemAmount);
+					}
+				}
+			}
+			return amount;
+		} catch (IOException e) {
+			mod.logError(e);
+		}
+		return Collections.emptyMap();
 	}
 }

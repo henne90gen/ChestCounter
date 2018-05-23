@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import de.henne90gen.chestcounter.ChestCounter;
-import de.henne90gen.chestcounter.ChestDB;
+import de.henne90gen.chestcounter.Helper;
 import javax.annotation.Nullable;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
@@ -22,11 +22,9 @@ import net.minecraftforge.fml.client.FMLClientHandler;
 public class ChestQueryCommand implements ICommand {
 
 	private final ChestCounter mod;
-	private final ChestDB chestDB;
 
 	public ChestQueryCommand(ChestCounter mod) {
 		this.mod = mod;
-		this.chestDB = new ChestDB(mod);
 	}
 
 	@Override
@@ -39,7 +37,7 @@ public class ChestQueryCommand implements ICommand {
 		}
 		try {
 			String label = args[0];
-			Map<String, Integer> itemCounts = chestDB.getItemCountsForLabel(mod.getWorldID(), label);
+			Map<String, Integer> itemCounts = mod.chestDB.getItemCountsForLabel(Helper.instance.getWorldID(), label);
 			mod.log("Query results: " + itemCounts);
 
 			if (itemCounts.size() == 0) {

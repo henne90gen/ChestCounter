@@ -16,17 +16,6 @@ public class TestChestCounter implements IChestCounter {
 		this.filename = filename;
 	}
 
-	@Nonnull
-	@Override
-	public List<BlockPos> getChestPositions(World world, BlockPos position) {
-		return Collections.emptyList();
-	}
-
-	@Override
-	public String getWorldID() {
-		return "test-world";
-	}
-
 	@Override
 	public void logError(Exception e) {
 

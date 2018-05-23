@@ -1,9 +1,9 @@
-package de.henne90gen.chestcounter.eventhandlers;
+package de.henne90gen.chestcounter;
 
 import java.util.*;
 
 import de.henne90gen.chestcounter.ChestCounter;
-import de.henne90gen.chestcounter.ChestDB;
+import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import net.minecraft.client.Minecraft;
@@ -27,7 +27,6 @@ public class ChestEventHandler {
 	private static final int INVENTORY_SIZE = 36;
 
 	private final ChestCounter mod;
-	private final ChestDB chestDB;
 
 	private List<BlockPos> chestPositions;
 
@@ -36,14 +35,13 @@ public class ChestEventHandler {
 	public ChestEventHandler(ChestCounter mod) {
 		this.mod = mod;
 		this.chestPositions = new ArrayList<>();
-		this.chestDB = new ChestDB(mod);
 	}
 
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void close(GuiOpenEvent event) {
 		if (event.getGui() == null && chest != null) {
-			chestDB.save(chest);
+			Helper.instance.runInThread(() -> mod.chestDB.save(chest));
 			chest = null;
 			chestPositions.clear();
 		}
@@ -61,8 +59,8 @@ public class ChestEventHandler {
 			Container currentContainer = ((GuiContainer) mc.currentScreen).inventorySlots;
 
 			chest = new Chest();
-			chest.worldID = mod.getWorldID();
-			chest.id = chestDB.createChestID(chestPositions);
+			chest.worldID = Helper.instance.getWorldID();
+			chest.id = Helper.instance.createChestID(chestPositions);
 			chest.chestContent = countItems(currentContainer);
 		}
 	}
@@ -97,7 +95,7 @@ public class ChestEventHandler {
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void interact(PlayerInteractEvent event) {
-		chestPositions = mod.getChestPositions(event.getWorld(), event.getPos());
+		chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
 	}
 
 	@SubscribeEvent
@@ -106,15 +104,12 @@ public class ChestEventHandler {
 		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
 		if (tileEntity instanceof TileEntityChest) {
 			Chest chestToDelete = new Chest();
-			chestToDelete.worldID = mod.getWorldID();
-			chestToDelete.id = chestDB.createChestID(Collections.singletonList(event.getPos()));
+			chestToDelete.worldID = Helper.instance.getWorldID();
+			chestToDelete.id = Helper.instance.createChestID(Collections.singletonList(event.getPos()));
 
-			ChestContent chestContent = chestDB.getChestContent(chestToDelete);
+			ChestContent chestContent = mod.chestDB.searchForChest(chestToDelete);
 
-			try {
-				chestDB.delete(chestToDelete).join();
-			} catch (InterruptedException ignored) {
-			}
+			mod.chestDB.delete(chestToDelete);
 
 			if (chestContent == null) {
 				return;
@@ -129,10 +124,10 @@ public class ChestEventHandler {
 				TileEntity entity = event.getWorld().getTileEntity(position);
 				if (entity instanceof TileEntityChest) {
 					Chest chest = new Chest();
-					chest.worldID = mod.getWorldID();
-					chest.id = chestDB.createChestID(Collections.singletonList(position));
+					chest.worldID = Helper.instance.getWorldID();
+					chest.id = Helper.instance.createChestID(Collections.singletonList(position));
 					chest.chestContent.label = chestContent.label;
-					chestDB.save(chest);
+					Helper.instance.runInThread(() -> mod.chestDB.save(chest));
 					break;
 				}
 			}
@@ -145,9 +140,10 @@ public class ChestEventHandler {
 		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
 		if (tileEntity instanceof TileEntityChest) {
 			Chest chest = new Chest();
-			chest.worldID = mod.getWorldID();
-			chest.id = chestDB.createChestID(mod.getChestPositions(event.getWorld(), event.getPos()));
-			chestDB.save(chest);
+			chest.worldID = Helper.instance.getWorldID();
+			List<BlockPos> chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
+			chest.id = Helper.instance.createChestID(chestPositions);
+			Helper.instance.runInThread(() -> mod.chestDB.save(chest));
 		}
 	}
 }
