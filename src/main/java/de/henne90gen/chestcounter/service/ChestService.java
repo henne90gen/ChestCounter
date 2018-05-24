@@ -98,28 +98,31 @@ public class ChestService implements IChestService {
 	}
 
 	@Override
-	public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label)
-			throws IOException
-	{
-		mod.log("Querying for " + label + " in world " + worldID);
-		Map<String, Integer> itemCounts = new LinkedHashMap<>();
-		Chests chests = db.loadChests(worldID);
+	public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label) {
+		try {
+			mod.log("Querying for " + label + " in world " + worldID);
+			Map<String, Integer> itemCounts = new LinkedHashMap<>();
+			Chests chests = db.loadChests(worldID);
 
-		for (ChestContent chestContent : chests.values()) {
-			if (!label.equals(chestContent.label)) {
-				continue;
-			}
+			for (ChestContent chestContent : chests.values()) {
+				if (!label.equals(chestContent.label)) {
+					continue;
+				}
 
-			for (Map.Entry<String, Integer> entry : chestContent.items.entrySet()) {
-				Integer amount = itemCounts.getOrDefault(entry.getKey(), 0);
-				amount += entry.getValue();
-				if (amount > 0) {
-					itemCounts.put(entry.getKey(), amount);
+				for (Map.Entry<String, Integer> entry : chestContent.items.entrySet()) {
+					Integer amount = itemCounts.getOrDefault(entry.getKey(), 0);
+					amount += entry.getValue();
+					if (amount > 0) {
+						itemCounts.put(entry.getKey(), amount);
+					}
 				}
 			}
-		}
 
-		return itemCounts;
+			return itemCounts;
+		} catch (IOException e) {
+			mod.logError(e);
+			return null;
+		}
 	}
 
 	@Override

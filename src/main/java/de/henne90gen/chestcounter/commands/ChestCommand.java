@@ -4,19 +4,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.dtos.AmountResult;
 import javax.annotation.Nullable;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.fml.client.FMLClientHandler;
 
 public class ChestCommand implements ICommand {
 
@@ -28,34 +27,78 @@ public class ChestCommand implements ICommand {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		EntityPlayerSP player = FMLClientHandler.instance().getClient().player;
+		if (args.length == 1) {
+			amountOfItems(sender, args);
+		} else if (args.length == 2) {
+			amountOfItemsForLabel(sender, args);
+		} else {
+			printUsage(sender);
+		}
+	}
 
-		if (args.length != 1) {
-			player.sendMessage(new TextComponentString(getUsage(sender)));
+	private void amountOfItemsForLabel(ICommandSender sender, String[] args) {
+		String label = args[0];
+		Map<String, Integer> itemCounts = mod.chestService.getItemCountsForLabel(Helper.instance.getWorldID(),
+				label);
+		if (itemCounts == null) {
+			sender.sendMessage(new TextComponentString("Something went wrong! Please try again."));
 			return;
 		}
+
+		mod.log("Query results: " + itemCounts);
+
+		String itemName = args[1].toLowerCase();
+		Map<String, Integer> amount = itemCounts.entrySet()
+				.stream()
+				.filter(entry -> entry.getKey().toLowerCase().contains(itemName)
+						|| itemName.contains(entry.getKey().toLowerCase()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		if (amount.size() == 0) {
+			printNoData(sender);
+			return;
+		} else {
+			sender.sendMessage(new TextComponentString(label + ":"));
+		}
+
+		printAmountsForLabel(sender, amount);
+	}
+
+	private void printAmountsForLabel(ICommandSender sender, Map<String, Integer> amount) {
+		for (Map.Entry<String, Integer> entry : amount.entrySet()) {
+			float numberOfStacks = entry.getValue() / 64.0f;
+			String msg = "    " + entry.getKey() + ": " + entry.getValue() + " (" + numberOfStacks + ")";
+			sender.sendMessage(new TextComponentString(msg));
+		}
+	}
+
+	private void amountOfItems(ICommandSender sender, String[] args) {
 		String queryString = args[0];
 		Map<String, AmountResult> amount = mod.chestService.getItemCounts(Helper.instance.getWorldID(), queryString);
 
 		if (amount.entrySet().size() == 0) {
-			printNoData(player);
+			printNoData(sender);
 			return;
 		}
 
-		printAmounts(player, amount);
+		printAmounts(sender, amount);
 	}
 
-	private void printNoData(EntityPlayerSP player) {
-		player.sendMessage(new TextComponentString("No data available"));
+	private void printUsage(ICommandSender sender) {
+		sender.sendMessage(new TextComponentString(getUsage(sender)));
 	}
 
-	private void printAmounts(EntityPlayerSP player, Map<String, AmountResult> amountResultMap) {
+	private void printNoData(ICommandSender sender) {
+		sender.sendMessage(new TextComponentString("No data available"));
+	}
+
+	private void printAmounts(ICommandSender sender, Map<String, AmountResult> amountResultMap) {
 		for (Map.Entry<String, AmountResult> entry : amountResultMap.entrySet()) {
 			int amount = entry.getValue().amount;
 			float numberOfStacks = amount / 64.0f;
 			String msg = entry.getKey() + ": " + amount + " -> " + numberOfStacks + " (" + String.join(", ",
 					entry.getValue().labels) + ")";
-			player.sendMessage(new TextComponentString(msg));
+			sender.sendMessage(new TextComponentString(msg));
 		}
 	}
 
