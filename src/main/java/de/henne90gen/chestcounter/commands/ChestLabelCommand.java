@@ -7,9 +7,9 @@ import java.util.Map;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
+import de.henne90gen.chestcounter.MessagePrinter;
 import de.henne90gen.chestcounter.dtos.Chest;
 import javax.annotation.Nullable;
-import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
@@ -20,8 +20,6 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraftforge.fml.client.FMLClientHandler;
 
 public class ChestLabelCommand implements ICommand {
 
@@ -33,20 +31,21 @@ public class ChestLabelCommand implements ICommand {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-		EntityPlayerSP player = FMLClientHandler.instance().getClient().player;
+		MessagePrinter printer = new MessagePrinter(sender);
 		Entity commandSenderEntity = sender.getCommandSenderEntity();
 
 		if (args.length > 1 || commandSenderEntity == null) {
-			player.sendMessage(new TextComponentString(getUsage(sender)));
+			printer.print(getUsage(sender));
 			return;
 		} else if (args.length == 0) {
-			printLabels(player);
+			Map<String, List<String>> labels = mod.chestService.getAllLabels(Helper.instance.getWorldID());
+			printer.printLabels(labels);
 			return;
 		}
 
 		BlockPos blockPos = findBlockPosLookedAt(commandSenderEntity);
 		if (blockPos == null) {
-			printLookAtChestMessage(player);
+			printer.printLookAtChestMessage();
 			return;
 		}
 
@@ -62,32 +61,10 @@ public class ChestLabelCommand implements ICommand {
 			chest.chestContent.label = label;
 
 			Helper.instance.runInThread(() -> mod.chestService.updateLabel(chest));
-			player.sendMessage(new TextComponentString("Updated label to " + label));
+			printer.printUpdatedLabel(label);
 		} else {
-			printLookAtChestMessage(player);
+			printer.printLookAtChestMessage();
 		}
-	}
-
-	private void printLabels(EntityPlayerSP player) {
-		Map<String, List<String>> labels = mod.chestService.getAllLabels(Helper.instance.getWorldID());
-		for (Map.Entry<String, List<String>> entry : labels.entrySet()) {
-			String label = entry.getKey();
-			if (label.isEmpty()) {
-				label = "No Label";
-			}
-
-			StringBuilder chestIDs = new StringBuilder();
-			for (String chestID : entry.getValue()) {
-				chestIDs.append("(").append(chestID).append("), ");
-			}
-			String chestIDsString = chestIDs.substring(0, chestIDs.length() - 2);
-
-			player.sendMessage(new TextComponentString(label + ": " + chestIDsString));
-		}
-	}
-
-	private void printLookAtChestMessage(EntityPlayerSP player) {
-		player.sendMessage(new TextComponentString("Please look at a chest to update its label"));
 	}
 
 	private BlockPos findBlockPosLookedAt(Entity entity) {

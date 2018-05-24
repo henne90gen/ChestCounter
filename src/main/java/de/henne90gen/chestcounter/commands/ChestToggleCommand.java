@@ -17,7 +17,7 @@ public class ChestToggleCommand implements ICommand {
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
 		MessagePrinter.togglePrintToEveryone();
-		new MessagePrinter(sender).print("Toggled message sending");
+		new MessagePrinter(sender).printToggle();
 	}
 
 	@Override

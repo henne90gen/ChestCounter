@@ -43,7 +43,7 @@ public class ChestCommand implements ICommand {
 		Map<String, Integer> itemCounts = mod.chestService.getItemCountsForLabel(Helper.instance.getWorldID(),
 				label);
 		if (itemCounts == null) {
-			printer.print("Something went wrong! Please try again.");
+			printer.printSomeError();
 			return;
 		}
 
