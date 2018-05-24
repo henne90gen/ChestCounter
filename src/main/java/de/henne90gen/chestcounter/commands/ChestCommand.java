@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
+import de.henne90gen.chestcounter.MessagePrinter;
 import de.henne90gen.chestcounter.dtos.AmountResult;
 import javax.annotation.Nullable;
 import net.minecraft.command.CommandException;
@@ -15,7 +16,6 @@ import net.minecraft.command.ICommand;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
 
 public class ChestCommand implements ICommand {
 
@@ -27,21 +27,23 @@ public class ChestCommand implements ICommand {
 
 	@Override
 	public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
+		MessagePrinter printer = new MessagePrinter(sender);
+
 		if (args.length == 1) {
-			amountOfItems(sender, args);
+			amountOfItems(printer, args);
 		} else if (args.length == 2) {
-			amountOfItemsForLabel(sender, args);
+			amountOfItemsForLabel(printer, args);
 		} else {
-			printUsage(sender);
+			printer.print(getUsage(sender));
 		}
 	}
 
-	private void amountOfItemsForLabel(ICommandSender sender, String[] args) {
+	private void amountOfItemsForLabel(MessagePrinter printer, String[] args) {
 		String label = args[0];
 		Map<String, Integer> itemCounts = mod.chestService.getItemCountsForLabel(Helper.instance.getWorldID(),
 				label);
 		if (itemCounts == null) {
-			sender.sendMessage(new TextComponentString("Something went wrong! Please try again."));
+			printer.print("Something went wrong! Please try again.");
 			return;
 		}
 
@@ -55,51 +57,25 @@ public class ChestCommand implements ICommand {
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 		if (amount.size() == 0) {
-			printNoData(sender);
+			printer.printNoData();
 			return;
 		} else {
-			sender.sendMessage(new TextComponentString(label + ":"));
+			printer.print(label + ":");
 		}
 
-		printAmountsForLabel(sender, amount);
+		printer.printAmountsForLabel(amount);
 	}
 
-	private void printAmountsForLabel(ICommandSender sender, Map<String, Integer> amount) {
-		for (Map.Entry<String, Integer> entry : amount.entrySet()) {
-			float numberOfStacks = entry.getValue() / 64.0f;
-			String msg = "    " + entry.getKey() + ": " + entry.getValue() + " (" + numberOfStacks + ")";
-			sender.sendMessage(new TextComponentString(msg));
-		}
-	}
-
-	private void amountOfItems(ICommandSender sender, String[] args) {
+	private void amountOfItems(MessagePrinter printer, String[] args) {
 		String queryString = args[0];
 		Map<String, AmountResult> amount = mod.chestService.getItemCounts(Helper.instance.getWorldID(), queryString);
 
 		if (amount.entrySet().size() == 0) {
-			printNoData(sender);
+			printer.printNoData();
 			return;
 		}
 
-		printAmounts(sender, amount);
-	}
-
-	private void printUsage(ICommandSender sender) {
-		sender.sendMessage(new TextComponentString(getUsage(sender)));
-	}
-
-	private void printNoData(ICommandSender sender) {
-		sender.sendMessage(new TextComponentString("No data available"));
-	}
-
-	private void printAmounts(ICommandSender sender, Map<String, AmountResult> amountResultMap) {
-		for (Map.Entry<String, AmountResult> entry : amountResultMap.entrySet()) {
-			int amount = entry.getValue().amount;
-			float numberOfStacks = amount / 64.0f;
-			String msg = entry.getKey() + ": " + amount + " -> " + numberOfStacks + " (" + String.join(", ",
-					entry.getValue().labels) + ")";
-			sender.sendMessage(new TextComponentString(msg));
-		}
+		printer.printAmounts(amount);
 	}
 
 	@Override
