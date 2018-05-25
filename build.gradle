@@ -66,7 +66,7 @@ build.dependsOn signJar
 
 ext.curseKey = System.getenv("CURSE_API_KEY")
 ext.curseReleaseType = 'release'
-ext.curseVersion = mod_version
+ext.curseVersion = version
 
 tasks.curseforge.onlyIf { curseKey }
 tasks.curseforge.dependsOn signJar
@@ -86,7 +86,6 @@ if (curseKey && hasProperty('curse_id')) {
 					addGameVersion version
 				}
 			}
-			addGameVersion 'Java 8'
 
 			mainArtifact(jar) {
 				displayName = "$mod_name $curseVersion"
