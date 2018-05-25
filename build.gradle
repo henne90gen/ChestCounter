@@ -1,84 +1,128 @@
 buildscript {
-    repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
-    }
+	repositories {
+		jcenter()
+		maven { url = "http://files.minecraftforge.net/maven" }
+	}
+	dependencies {
+		classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+	}
 }
+plugins {
+	id "com.matthewprenger.cursegradle" version "1.0.10"
+}
+
 apply plugin: 'net.minecraftforge.gradle.forge'
-//Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'idea'
 
-version = "1.0"
-group = "de.henne90gen.chestcounter" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "chestcounter"
-
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
+ext.build_number = System.getenv('BUILD_NUMBER')
+if (!build_number) {
+	ext.build_number = System.getenv('TRAVIS_BUILD_NUMBER')
 }
+
+if (build_number) {
+	version = mod_version + '.' + build_number
+} else {
+	version = mod_version
+}
+
+group = mod_group
+archivesBaseName = mod_name
+
 
 minecraft {
-    version = "1.12.2-14.23.3.2691"
-    runDir = "run"
+	version = forge_version
+	mappings = mcp_version
 
-    // the mappings can be changed at any time, and must be in the following format.
-    // snapshot_YYYYMMDD   snapshot are built nightly.
-    // stable_#            stables are built at the discretion of the MCP team.
-    // Use non-default mappings at your own risk. they may not always work.
-    // simply re-run your setup task after changing the mappings to update your workspace.
-    mappings = "snapshot_20171003"
-    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+	runDir = "run"
+	makeObfSourceJar = false
+
+	replace '@VERSION@', project.version
+	replaceIn 'ChestCounter.java'
 }
 
+sourceCompatibility = targetCompatibility = '1.8'
+
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+	testCompile group: 'junit', name: 'junit', version: '4.12'
+}
 
-    // you may put jars on which you depend on in ./libs
-    // or you may define them like so..
-    //compile "some.group:artifact:version:classifier"
-    //compile "some.group:artifact:version"
+ext.keystore = System.getenv("KEYSTORE")
+ext.keystorePass = System.getenv("KEYSTORE_PASSWORD")
+ext.keyPass = System.getenv("KEY_PASSWORD")
+ext.keyAlias = System.getenv("KEY_ALIAS")
 
-    // real examples
-    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
-    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
+task signJar(type: Exec, dependsOn: reobfJar) {
+	onlyIf {
+		project.keystore && project.keystorePass && project.keyPass && project.keyAlias
+	}
 
-    // the 'provided' configuration is for optional dependencies that exist at compile-time but might not at runtime.
-    //provided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+	commandLine "jarsigner", "-keystore", keystore, "-storepass", keystorePass, "-keypass", keyPass,
+			"-tsa", "http://timestamp.comodoca.com", "-tsadigestalg", "SHA-512",
+//			"-sigalg", "SHA512withECDSA", "-digestalg", "SHA-512",
+			jar.archivePath, keyAlias
+}
 
-    // the deobf configurations:  'deobfCompile' and 'deobfProvided' are the same as the normal compile and provided,
-    // except that these dependencies get remapped to your current MCP mappings
-    //deobfCompile 'com.mod-buildcraft:buildcraft:6.0.8:dev'
-    //deobfProvided 'com.mod-buildcraft:buildcraft:6.0.8:dev'
+build.dependsOn signJar
 
-    // for more info...
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+ext.curseKey = System.getenv("CURSE_API_KEY")
+ext.curseReleaseType = 'release'
+ext.curseVersion = mod_version
 
+tasks.curseforge.onlyIf { curseKey }
+tasks.curseforge.dependsOn signJar
+
+if (curseKey && hasProperty('curse_id')) {
+	curseforge {
+		apiKey = curseKey
+
+		project {
+			id = curse_id
+			changelog = "Changes..."
+			releaseType = curseReleaseType
+			addGameVersion minecraft.version
+
+			if (hasProperty('curseExtraVersions')) {
+				for (version in curseExtraVersions) {
+					addGameVersion version
+				}
+			}
+			addGameVersion 'Java 8'
+
+			mainArtifact(jar) {
+				displayName = "$mod_name $curseVersion"
+			}
+		}
+	}
 }
 
 processResources {
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", version
-    inputs.property "mcversion", minecraft.version
+	inputs.property "version", version
+	inputs.property "mcversion", minecraft.version
 
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
+	from(sourceSets.main.resources.srcDirs) {
+		include 'mcmod.info'
 
-        // replace version and mcversion
-        expand 'version': version, 'mcversion': minecraft.version
-    }
+		expand 'version': version, 'mcversion': minecraft.version
+	}
 
-    // copy everything else except the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
+	from(sourceSets.main.resources.srcDirs) {
+		exclude 'mcmod.info'
+	}
 }
 
 task copyToGame(type: Copy, dependsOn: build) {
 	// Provide the destination directory like so: -Pdest=/path/to/destination
+	def dest = "./"
 	from file("${buildDir}/libs/${archivesBaseName}-${version}.jar")
 	into file(dest)
+}
+
+idea {
+	module {
+		inheritOutputDirs = true
+	}
+
+	project {
+		vcs = 'Git'
+	}
 }
