@@ -241,7 +241,7 @@ public class ChestServiceTest {
 	}
 
 	private ChestService chestService(String filename) {
-		return new ChestService(new TestChestCounter(filename), new ChestDB(filename));
+		return new ChestService(new TestChestCounter(filename), new ChestDB(new ChestCounter(), filename));
 	}
 
 	private ChestService chestService() {

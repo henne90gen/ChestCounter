@@ -109,6 +109,6 @@ public class ChestDBTest {
 	}
 
 	private ChestDB chestDB(String filename) {
-		return new ChestDB(filename);
+		return new ChestDB(new ChestCounter(), filename);
 	}
 }
