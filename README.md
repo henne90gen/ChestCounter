@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/henne90gen/ChestCounter.svg?branch=master)](https://travis-ci.org/henne90gen/ChestCounter)
+
 -------------------------------------------
 Source installation information for modders
 -------------------------------------------
