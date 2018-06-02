@@ -5,6 +5,7 @@ import de.henne90gen.chestcounter.commands.ChestLabelCommand;
 import de.henne90gen.chestcounter.commands.ChestToggleCommand;
 import de.henne90gen.chestcounter.db.ChestDB;
 import de.henne90gen.chestcounter.db.ChestDBCache;
+import de.henne90gen.chestcounter.db.IChestDB;
 import de.henne90gen.chestcounter.service.ChestService;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
@@ -16,43 +17,45 @@ import org.apache.logging.log4j.Logger;
 @Mod(modid = ChestCounter.MODID, name = ChestCounter.NAME, version = ChestCounter.VERSION, useMetadata = true)
 public class ChestCounter implements IChestCounter {
 
-	public static final String MODID = "chestcounter";
-	public static final String NAME = "Chest Counter";
-	public static final String VERSION = "@VERSION@";
+    public static final String MODID = "chestcounter";
+    public static final String NAME = "Chest Counter";
+    public static final String VERSION = "@VERSION@";
 
-	private Logger logger;
+    private Logger logger;
 
-	public ChestService chestService;
+    public final Object fileLock = new Object();
+    public ChestService chestService;
 
-	@EventHandler
-	public void preInit(FMLPreInitializationEvent event) {
-		logger = event.getModLog();
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        logger = event.getModLog();
 
-		chestService = new ChestService(this, new ChestDBCache(new ChestDB(getChestDBFilename())));
+        IChestDB chestDB = new ChestDBCache(new ChestDB(this, getChestDBFilename()));
+        chestService = new ChestService(this, chestDB);
 
-		// register event handler
-		MinecraftForge.EVENT_BUS.register(new ChestEventHandler(this));
+        // register event handler
+        MinecraftForge.EVENT_BUS.register(new ChestEventHandler(this));
 
-		// register commands
-		ClientCommandHandler.instance.registerCommand(new ChestCommand(this));
-		ClientCommandHandler.instance.registerCommand(new ChestLabelCommand(this));
-		ClientCommandHandler.instance.registerCommand(new ChestToggleCommand());
+        // register commands
+        ClientCommandHandler.instance.registerCommand(new ChestCommand(this));
+        ClientCommandHandler.instance.registerCommand(new ChestLabelCommand(this));
+        ClientCommandHandler.instance.registerCommand(new ChestToggleCommand());
 
-		logger.info("Enabled {}", NAME);
-	}
+        logger.info("Enabled {}", NAME);
+    }
 
-	@Override
-	public void logError(Exception e) {
-		logger.error("Something went wrong!", e);
-	}
+    @Override
+    public void logError(Exception e) {
+        logger.error("Something went wrong!", e);
+    }
 
-	@Override
-	public void log(String msg) {
-		logger.info(msg);
-	}
+    @Override
+    public void log(String msg) {
+        logger.info(msg);
+    }
 
-	@Override
-	public String getChestDBFilename() {
-		return "./chestcount.json";
-	}
+    @Override
+    public String getChestDBFilename() {
+        return "./chestcount.json";
+    }
 }

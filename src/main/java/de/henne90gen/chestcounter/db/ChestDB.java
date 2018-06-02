@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import com.google.gson.Gson;
+import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import de.henne90gen.chestcounter.dtos.Chests;
 
@@ -13,9 +14,11 @@ public class ChestDB implements IChestDB {
 
 	private static final Gson gson = new Gson();
 
+	private final ChestCounter mod;
 	private final String filename;
 
-	public ChestDB(String filename) {
+	public ChestDB(ChestCounter mod, String filename) {
+		this.mod = mod;
 		this.filename = filename;
 	}
 
@@ -40,9 +43,11 @@ public class ChestDB implements IChestDB {
 		}
 		worlds.put(worldID, chests);
 
-		File jsonFile = new File(filename);
-		try (FileWriter writer = new FileWriter(jsonFile)) {
-			gson.toJson(worlds, writer);
+		synchronized (mod.fileLock) {
+			File jsonFile = new File(filename);
+			try (FileWriter writer = new FileWriter(jsonFile)) {
+				gson.toJson(worlds, writer);
+			}
 		}
 	}
 
@@ -52,8 +57,10 @@ public class ChestDB implements IChestDB {
 			return null;
 		}
 		ChestWorlds worlds;
-		try (FileReader reader = new FileReader(jsonFile)) {
-			worlds = gson.fromJson(reader, ChestWorlds.class);
+		synchronized (mod.fileLock) {
+			try (FileReader reader = new FileReader(jsonFile)) {
+				worlds = gson.fromJson(reader, ChestWorlds.class);
+			}
 		}
 		return worlds;
 	}
