@@ -4,12 +4,8 @@ jdk:
 sudo: false
 jobs:
   include:
-    - stage: install
-      script: "./gradlew setupCI"
     - stage: build
-      script: "./gradlew build"
-    - stage: test
-      script: "./gradlew test"
+      script: "./gradlew setupCI build test"
     - stage: deploy
       if: tag IS present
       script: "./gradlew curseforge"
