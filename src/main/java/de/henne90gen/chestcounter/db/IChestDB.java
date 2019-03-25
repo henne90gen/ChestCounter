@@ -8,4 +8,6 @@ public interface IChestDB {
 	Chests loadChests(String worldID) throws IOException;
 
 	void saveChests(Chests chests, String worldID) throws IOException;
+
+    void deleteWorld(String worldID) throws IOException;
 }

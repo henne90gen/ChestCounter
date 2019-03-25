@@ -27,4 +27,6 @@ public interface IChestService {
 	Map<String, AmountResult> getItemCounts(String worldID, String queryString);
 
 	Chests getChests(String worldID);
+
+    void deleteWorld(String worldID);
 }
