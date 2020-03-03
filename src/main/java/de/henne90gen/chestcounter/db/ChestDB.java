@@ -28,11 +28,7 @@ public class ChestDB implements IChestDB {
 		if (worlds == null) {
 			return null;
 		}
-		Chests chests = worlds.get(worldID);
-		if (chests == null) {
-			return null;
-		}
-		return chests;
+		return worlds.get(worldID);
 	}
 
 	@Override
@@ -56,10 +52,12 @@ public class ChestDB implements IChestDB {
 		if (!jsonFile.exists()) {
 			return null;
 		}
-		ChestWorlds worlds;
+		ChestWorlds worlds = null;
 		synchronized (mod.fileLock) {
 			try (FileReader reader = new FileReader(jsonFile)) {
 				worlds = gson.fromJson(reader, ChestWorlds.class);
+			} catch (IllegalStateException e) {
+				mod.logError(e);
 			}
 		}
 		return worlds;
