@@ -210,4 +210,13 @@ public class ChestService implements IChestService {
             return new Chests();
         }
     }
+
+    @Override
+    public void deleteWorld(String worldID) {
+        try {
+            db.deleteWorld(worldID);
+        } catch (IOException e) {
+            mod.logError(e);
+        }
+    }
 }

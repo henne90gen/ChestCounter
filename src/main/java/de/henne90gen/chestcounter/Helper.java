@@ -22,11 +22,10 @@ public class Helper {
 
 	}
 
-	public Thread runInThread(Runnable runnable) {
+	public void runInThread(Runnable runnable) {
 		Thread thread = new Thread(runnable);
 		thread.setDaemon(true);
 		thread.start();
-		return thread;
 	}
 
 	public String createChestID(List<BlockPos> positions) {
@@ -91,5 +90,16 @@ public class Helper {
 		}
 
 		return worldName + ":" + dimension;
+	}
+
+	public String createDefaultLabel(List<BlockPos> chestPositions) {
+		if (chestPositions.isEmpty()){
+			return "";
+		}
+		BlockPos pos = chestPositions.get(0);
+		int x = pos.getX();
+		int y = pos.getY();
+		int z = pos.getZ();
+		return x + " " + y + " " + z;
 	}
 }

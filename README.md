@@ -1,8 +1,14 @@
+# ChestCounter
+
 [![Build Status](https://travis-ci.org/henne90gen/ChestCounter.svg?branch=master)](https://travis-ci.org/henne90gen/ChestCounter)
 
--------------------------------------------
-Source installation information for modders
--------------------------------------------
+This is a Minecraft mod that allows you to count all the items that you have in your chests.
+Items are counted by simply opening chests.
+Later on you can query for specific items or search for a certain key word.
+The mod will list all items that you have in various chests.
+
+## Installation Information
+
 This code follows the Minecraft Forge installation methodology. It will apply
 some small patches to the vanilla MCP source code, giving you and it access 
 to some of the data and functions you need to build a successful mod.
@@ -13,8 +19,7 @@ normal code.
 
 Source pack installation information:
 
-Standalone source installation
-==============================
+### Standalone source installation
 
 See the Forge Documentation online for more detailed instructions:
 http://mcforge.readthedocs.io/en/latest/gettingstarted/
@@ -51,13 +56,13 @@ If you do not care about seeing Minecraft's source code you can replace "setupDe
 Tip:
 When using Decomp workspace, the Minecraft source code is NOT added to your workspace in a editable way. Minecraft is treated like a normal Library. Sources are there for documentation and research purposes and usually can be accessed under the 'referenced libraries' section of your IDE.
 
-Forge source installation
-=========================
+### Forge source installation
+
 MinecraftForge ships with this code and installs it as part of the forge
 installation process, no further action is required on your part.
 
-LexManos' Install Video
-=======================
+### LexManos' Install Video
+
 https://www.youtube.com/watch?v=8VEdtQLuLO0&feature=youtu.be
 
 For more details update more often refer to the Forge Forums:

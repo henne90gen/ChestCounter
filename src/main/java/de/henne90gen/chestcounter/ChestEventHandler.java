@@ -62,6 +62,7 @@ public class ChestEventHandler {
 			chest.worldID = Helper.instance.getWorldID();
 			chest.id = Helper.instance.createChestID(chestPositions);
 			chest.chestContent = countItems(currentContainer);
+			chest.chestContent.label = Helper.instance.createDefaultLabel(chestPositions);
 		}
 	}
 

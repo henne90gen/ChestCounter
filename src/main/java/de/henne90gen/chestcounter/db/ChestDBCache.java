@@ -30,4 +30,10 @@ public class ChestDBCache implements IChestDB {
 		cachedChests.put(worldID, chests);
 		delegate.saveChests(chests, worldID);
 	}
+
+	@Override
+	public void deleteWorld(String worldID) throws IOException {
+		cachedChests.remove(worldID);
+		delegate.deleteWorld(worldID);
+	}
 }

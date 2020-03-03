@@ -12,6 +12,7 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 
+@SuppressWarnings("NullableProblems")
 public class ChestToggleCommand implements ICommand {
 
 	@Override
