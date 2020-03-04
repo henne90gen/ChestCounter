@@ -1,5 +1,6 @@
 package de.henne90gen.chestcounter;
 
+import de.henne90gen.chestcounter.commands.ChestClearCommand;
 import de.henne90gen.chestcounter.commands.ChestCommand;
 import de.henne90gen.chestcounter.commands.ChestLabelCommand;
 import de.henne90gen.chestcounter.commands.ChestToggleCommand;
@@ -40,6 +41,7 @@ public class ChestCounter implements IChestCounter {
         ClientCommandHandler.instance.registerCommand(new ChestCommand(this));
         ClientCommandHandler.instance.registerCommand(new ChestLabelCommand(this));
         ClientCommandHandler.instance.registerCommand(new ChestToggleCommand());
+        ClientCommandHandler.instance.registerCommand(new ChestClearCommand(this));
 
         logger.info("Enabled {}", NAME);
     }

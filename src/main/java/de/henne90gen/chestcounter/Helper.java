@@ -39,6 +39,18 @@ public class Helper {
 		return String.join(":", positionStrings);
 	}
 
+	public BlockPos getBlockPosFromChestID(String chestId) {
+		String[] parts = chestId.split(":");
+		if (parts.length == 0) {
+			return new BlockPos(0,0,0);
+		}
+		String[] coords = parts[0].split(",");
+		float x = Float.parseFloat(coords[0]);
+		float y = Float.parseFloat(coords[1]);
+		float z = Float.parseFloat(coords[2]);
+		return new BlockPos(x, y, z);
+	}
+
 	public Comparator<BlockPos> getBlockPosComparator() {
 		return (block, other) -> {
 			if (block.getX() < other.getX()) {
