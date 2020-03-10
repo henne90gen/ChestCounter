@@ -1,43 +1,52 @@
 package de.henne90gen.chestcounter;
 
-import java.util.*;
-
+import com.sun.jna.platform.unix.X11;
+import de.henne90gen.chestcounter.dtos.AmountResult;
 import de.henne90gen.chestcounter.dtos.Chest;
 import de.henne90gen.chestcounter.dtos.ChestContent;
 import de.henne90gen.chestcounter.dtos.Chests;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.entity.RenderManager;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.inventory.Container;
+import net.minecraft.client.gui.screen.inventory.ChestScreen;
+import net.minecraft.client.gui.screen.inventory.ContainerScreen;
+import net.minecraft.client.gui.screen.inventory.InventoryScreen;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.gui.widget.Widget;
+import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.world.BlockEvent;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.Color;
 
+import java.util.*;
+
+@Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestEventHandler {
+
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final int INVENTORY_SIZE = 36;
 
-    private static Minecraft mc = Minecraft.getMinecraft();
+    private static final int MARGIN = 5;
 
     private final ChestCounter mod;
-
     private List<BlockPos> chestPositions;
-
     private Chest chest;
+
+    private TextFieldWidget searchField = null;
+    private Map<String, AmountResult> lastSearchResult = null;
+
+    private TextFieldWidget labelField = null;
 
     public ChestEventHandler(ChestCounter mod) {
         this.mod = mod;
@@ -45,7 +54,12 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
+    public void worldLoaded(WorldEvent.Load event) {
+        IntegratedServer integratedServer = Minecraft.getInstance().getIntegratedServer();
+        mod.registerCommands(integratedServer);
+    }
+
+    @SubscribeEvent
     public void close(GuiOpenEvent event) {
         if (event.getGui() == null && chest != null) {
             Helper.instance.runInThread(() -> {
@@ -57,15 +71,14 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
     public void guiIsOpen(GuiContainerEvent event) {
         if (shouldNotHandleEvent(event)) {
             return;
         }
 
-        Minecraft mc = FMLClientHandler.instance().getClient();
-        if (mc.currentScreen instanceof GuiContainer) {
-            Container currentContainer = ((GuiContainer) mc.currentScreen).inventorySlots;
+        Minecraft mc = event.getGuiContainer().getMinecraft();
+        if (mc.currentScreen instanceof ChestScreen) {
+            Container currentContainer = ((ChestScreen) mc.currentScreen).getContainer();
 
             chest = new Chest();
             chest.worldID = Helper.instance.getWorldID();
@@ -77,16 +90,15 @@ public class ChestEventHandler {
 
     private boolean shouldNotHandleEvent(GuiContainerEvent event) {
         return chestPositions.isEmpty() || event.getGuiContainer() == null ||
-                event.getGuiContainer().mc == null ||
-                event.getGuiContainer().mc.world == null ||
-                !event.getGuiContainer().mc.world.isRemote;
+                event.getGuiContainer().getMinecraft().world == null ||
+                !event.getGuiContainer().getMinecraft().world.isRemote();
     }
 
     private ChestContent countItems(Container currentContainer) {
         Map<String, Integer> counter = new LinkedHashMap<>();
         for (int i = 0; i < currentContainer.inventorySlots.size() - INVENTORY_SIZE; i++) {
             ItemStack stack = currentContainer.inventorySlots.get(i).getStack();
-            String itemName = stack.getDisplayName();
+            String itemName = stack.getDisplayName().getString();
             if ("Air".equals(itemName)) {
                 continue;
             }
@@ -103,16 +115,21 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
     public void interact(PlayerInteractEvent event) {
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
         chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
     public void harvestBlock(BlockEvent.BreakEvent event) {
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
+
         TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
-        if (tileEntity instanceof TileEntityChest) {
+        if (tileEntity instanceof ChestTileEntity) {
             Chest chestToDelete = new Chest();
             chestToDelete.worldID = Helper.instance.getWorldID();
             chestToDelete.id = Helper.instance.createChestID(Collections.singletonList(event.getPos()));
@@ -132,7 +149,7 @@ public class ChestEventHandler {
             };
             for (BlockPos position : positions) {
                 TileEntity entity = event.getWorld().getTileEntity(position);
-                if (entity instanceof TileEntityChest) {
+                if (entity instanceof ChestTileEntity) {
                     Chest chest = new Chest();
                     chest.worldID = Helper.instance.getWorldID();
                     chest.id = Helper.instance.createChestID(Collections.singletonList(position));
@@ -145,10 +162,13 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
-    public void place(BlockEvent.PlaceEvent event) {
+    public void place(BlockEvent.EntityPlaceEvent event) {
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
+
         TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
-        if (tileEntity instanceof TileEntityChest) {
+        if (tileEntity instanceof ChestTileEntity) {
             Chest chest = new Chest();
             chest.worldID = Helper.instance.getWorldID();
             List<BlockPos> chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
@@ -159,9 +179,85 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
+    public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
+        if (event.getGui() instanceof ContainerScreen) {
+            LOGGER.info("Opened inventory (" + event.getGui().getClass() + ")");
+
+            int guiLeft = ((ContainerScreen) event.getGui()).getGuiLeft();
+            int guiTop = ((ContainerScreen) event.getGui()).getGuiTop();
+            int xSize = ((ContainerScreen) event.getGui()).getXSize();
+
+            int x = guiLeft + xSize + MARGIN;
+            searchField = new TextFieldWidget(
+                    Minecraft.getInstance().fontRenderer,
+                    x, guiTop,
+                    100, 15,
+                    "Search"
+            );
+            event.addWidget(searchField);
+
+            if (event.getGui() instanceof ChestScreen) {
+                LOGGER.info("Opened chest");
+                int width = 100;
+                labelField = new TextFieldWidget(
+                        Minecraft.getInstance().fontRenderer,
+                        guiLeft - width, guiTop,
+                        width, 15,
+                        "Chest Label"
+                );
+                event.addWidget(labelField);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
+        if (event.getGui() instanceof ContainerScreen) {
+            event.setCanceled(searchField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
+            if (event.getKeyCode() == 69 /*e*/ && searchField.isFocused()) {
+                event.setCanceled(true);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
+        if (event.getGui() instanceof ContainerScreen) {
+            event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
+            lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+        }
+    }
+
+    @SubscribeEvent
+    public void renderGui(GuiScreenEvent.DrawScreenEvent.Post event) {
+        if (lastSearchResult == null) {
+            return;
+        }
+
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
+
+        int guiLeft = ((ContainerScreen) event.getGui()).getGuiLeft();
+        int guiTop = ((ContainerScreen) event.getGui()).getGuiTop();
+        int xSize = ((ContainerScreen) event.getGui()).getXSize();
+
+        int RESULT_MARGIN = 25;
+        int currentY = guiTop + RESULT_MARGIN;
+        for (Map.Entry<String, AmountResult> entry : lastSearchResult.entrySet()) {
+            Minecraft.getInstance().fontRenderer.drawString(entry.getKey(), guiLeft + xSize + MARGIN, currentY, 0xffffff);
+            currentY += MARGIN * 2;
+            // TODO render full search result
+        }
+    }
+
+    @SubscribeEvent
     public void render(RenderWorldLastEvent event) {
         Chests chests = mod.chestService.getChests(Helper.instance.getWorldID());
+
+        if (chests == null) {
+            return;
+        }
 
         int color = 0xFFFFFF;
         float partialTickTime = event.getPartialTicks();
@@ -177,12 +273,14 @@ public class ChestEventHandler {
 
     private void renderText(String[] text, float x, float y, float z, float maxDistance, int color, float partialTickTime) {
         // TODO refactor this into a different class
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) {
+            return;
+        }
 
-        RenderManager renderManager = mc.getRenderManager();
-
-        float playerX = (float) (mc.player.lastTickPosX + (mc.player.posX - mc.player.lastTickPosX) * partialTickTime);
-        float playerY = (float) (mc.player.lastTickPosY + (mc.player.posY - mc.player.lastTickPosY) * partialTickTime);
-        float playerZ = (float) (mc.player.lastTickPosZ + (mc.player.posZ - mc.player.lastTickPosZ) * partialTickTime);
+        float playerX = (float) (mc.player.lastTickPosX + (mc.player.getPosX() - mc.player.lastTickPosX) * partialTickTime);
+        float playerY = (float) (mc.player.lastTickPosY + (mc.player.getPosY() - mc.player.lastTickPosY) * partialTickTime);
+        float playerZ = (float) (mc.player.lastTickPosZ + (mc.player.getPosZ() - mc.player.lastTickPosZ) * partialTickTime);
 
         float dx = (x - playerX) + 0.5F;
         float dy = (y - playerY) + 0.5F;
@@ -196,8 +294,8 @@ public class ChestEventHandler {
         GL11.glColor4f(1f, 1f, 1f, 0.5f);
         GL11.glPushMatrix();
         GL11.glTranslatef(dx, dy, dz);
-        GL11.glRotatef(-renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
-        GL11.glRotatef(renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
+        GL11.glRotatef(-mc.player.cameraYaw, 0.0F, 1.0F, 0.0F);
+        GL11.glRotatef(mc.player.cameraYaw, 1.0F, 0.0F, 0.0F);
         GL11.glScalef(-scale, -scale, scale);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDepthMask(false);

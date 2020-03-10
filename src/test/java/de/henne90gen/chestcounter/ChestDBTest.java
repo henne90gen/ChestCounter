@@ -36,7 +36,7 @@ public class ChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        TestHelper.writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB(filename).loadChests("NonExistentWorld:0");
@@ -58,7 +58,7 @@ public class ChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        TestHelper.writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB(filename).loadChests(worldID);
@@ -105,7 +105,7 @@ public class ChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        TestHelper.writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB(filename).deleteWorld(worldID);
@@ -129,7 +129,7 @@ public class ChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        TestHelper.writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB(filename).deleteWorld("NonExistentWorld:0");
@@ -142,26 +142,15 @@ public class ChestDBTest {
             assertEquals(chestLabel, resultContent.label);
             assertEquals(1, resultContent.items.size());
             assertTrue(itemName, resultContent.items.containsKey(itemName));
-            assertEquals(new Integer(itemAmount), resultContent.items.get(itemName));        } catch (IOException e) {
+            assertEquals(new Integer(itemAmount), resultContent.items.get(itemName));
+        } catch (IOException e) {
             fail();
         } finally {
             chestCounter.delete();
         }
     }
 
-    private void writeTestFile(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
-            throws IOException {
-        FileWriter writer = new FileWriter(file);
-
-        writer.write("{\""
-                + worldID
-                + "\":{\""
-                + chestID
-                + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}");
-        writer.close();
+    private ChestDB chestDB(String filename) {
+        return new ChestDB(new ChestCounter(), filename);
     }
-
-	private ChestDB chestDB(String filename) {
-		return new ChestDB(new ChestCounter(), filename);
-	}
 }

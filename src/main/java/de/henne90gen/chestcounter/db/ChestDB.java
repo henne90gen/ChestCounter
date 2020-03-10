@@ -7,6 +7,8 @@ import java.io.IOException;
 
 import com.google.gson.Gson;
 import de.henne90gen.chestcounter.ChestCounter;
+import de.henne90gen.chestcounter.dtos.Chest;
+import de.henne90gen.chestcounter.dtos.ChestStorage;
 import de.henne90gen.chestcounter.dtos.ChestWorlds;
 import de.henne90gen.chestcounter.dtos.Chests;
 
@@ -42,11 +44,14 @@ public class ChestDB implements IChestDB {
         writeChestWorlds(worlds);
     }
 
-    private void writeChestWorlds(ChestWorlds worlds) throws IOException {
+	private void writeChestWorlds(ChestWorlds worlds) throws IOException {
+		ChestStorage storage = new ChestStorage();
+		storage.version = ChestStorage.CURRENT_VERSION;
+		storage.worlds = worlds;
         synchronized (mod.fileLock) {
             File jsonFile = new File(filename);
             try (FileWriter writer = new FileWriter(jsonFile)) {
-                gson.toJson(worlds, writer);
+                gson.toJson(storage, writer);
             }
         }
     }
@@ -56,15 +61,25 @@ public class ChestDB implements IChestDB {
 		if (!jsonFile.exists()) {
 			return null;
 		}
-		ChestWorlds worlds = null;
+
+		ChestStorage storage;
 		synchronized (mod.fileLock) {
 			try (FileReader reader = new FileReader(jsonFile)) {
-				worlds = gson.fromJson(reader, ChestWorlds.class);
+				storage = gson.fromJson(reader, ChestStorage.class);
 			} catch (IllegalStateException e) {
 				mod.logError(e);
+				return null;
 			}
 		}
-		return worlds;
+
+		if (storage == null) {
+			return null;
+		}
+		if (storage.version != ChestStorage.CURRENT_VERSION) {
+			// TODO decide what to do with this
+			return null;
+		}
+		return storage.worlds;
 	}
 
     @Override

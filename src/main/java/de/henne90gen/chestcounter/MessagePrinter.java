@@ -1,20 +1,20 @@
 package de.henne90gen.chestcounter;
 
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import de.henne90gen.chestcounter.dtos.AmountResult;
+import net.minecraft.command.CommandSource;
+import net.minecraft.util.text.StringTextComponent;
+
 import java.util.List;
 import java.util.Map;
-
-import de.henne90gen.chestcounter.dtos.AmountResult;
-import net.minecraft.client.entity.EntityPlayerSP;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.util.text.TextComponentString;
 
 public class MessagePrinter {
 
     private static boolean PRINT_TO_EVERYONE = false;
 
-    private final ICommandSender sender;
+    private final CommandSource sender;
 
-    public MessagePrinter(ICommandSender sender) {
+    public MessagePrinter(CommandSource sender) {
         this.sender = sender;
     }
 
@@ -36,8 +36,8 @@ public class MessagePrinter {
             float numberOfStacks = amount / 64.0f;
             String labels = "";
             if (!entry.getValue().labels.isEmpty()) {
-				labels = " (" + String.join(", ", entry.getValue().labels) + ")";
-			}
+                labels = " (" + String.join(", ", entry.getValue().labels) + ")";
+            }
             String msg = "  " + entry.getKey() + ": " + amount + " -> " + numberOfStacks + labels;
             print(msg);
         }
@@ -81,10 +81,12 @@ public class MessagePrinter {
     }
 
     public void print(String msg) {
-        if (PRINT_TO_EVERYONE && sender instanceof EntityPlayerSP) {
-            ((EntityPlayerSP) sender).sendChatMessage(msg);
-        } else {
-            sender.sendMessage(new TextComponentString(msg));
+        try {
+            // TODO differentiate between sending to everyone and sending to the current player only
+            sender.asPlayer().sendMessage(new StringTextComponent(msg));
+        } catch (CommandSyntaxException e) {
+            e.printStackTrace();
+            // TODO porper error handling
         }
     }
 }

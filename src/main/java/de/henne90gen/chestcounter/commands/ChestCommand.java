@@ -1,49 +1,41 @@
 package de.henne90gen.chestcounter.commands;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.MessagePrinter;
 import de.henne90gen.chestcounter.dtos.AmountResult;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.Commands;
 
-import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import net.minecraft.command.CommandException;
-import net.minecraft.command.ICommand;
-import net.minecraft.command.ICommandSender;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
+public class ChestCommand {
 
-public class ChestCommand implements ICommand {
-
-    private final ChestCounter mod;
-
-    public ChestCommand(ChestCounter mod) {
-        this.mod = mod;
+    public static void register(ChestCounter mod, CommandDispatcher<CommandSource> dispatcher) {
+        dispatcher.register(
+                Commands.literal("chest")
+                        .then(Commands.argument("item", StringArgumentType.string()))
+                        .executes(context -> {
+                            MessagePrinter printer = new MessagePrinter(context.getSource());
+                            String itemName = StringArgumentType.getString(context, "item");
+                            if (itemName.isEmpty()) {
+                                amountOfAllItems(mod, printer);
+                            } else {
+                                amountOfItems(mod, printer, itemName);
+                            }
+//        else if (args.length == 2) {
+//            amountOfItemsForLabel(printer, args);
+//        } else {
+//            printer.print(getUsage(sender));
+//        }
+                            return 0;
+                        }));
     }
 
-    @Override
-    public void execute(MinecraftServer server, ICommandSender sender, String[] args) throws CommandException {
-        MessagePrinter printer = new MessagePrinter(sender);
-
-        if (args.length == 0) {
-            amountOfAllItems(printer);
-        } else if (args.length == 1) {
-            String queryString = args[0];
-            amountOfItems(printer, queryString);
-        } else if (args.length == 2) {
-            amountOfItemsForLabel(printer, args);
-        } else {
-            printer.print(getUsage(sender));
-        }
-    }
-
-    private void amountOfItemsForLabel(MessagePrinter printer, String[] args) {
+    private static void amountOfItemsForLabel(ChestCounter mod, MessagePrinter printer, String[] args) {
         String label = args[0];
         Map<String, Integer> itemCounts = mod.chestService.getItemCountsForLabel(Helper.instance.getWorldID(),
                 label);
@@ -71,11 +63,11 @@ public class ChestCommand implements ICommand {
         printer.printAmountsForLabel(amount);
     }
 
-    private void amountOfAllItems(MessagePrinter printer) {
-        amountOfItems(printer, "");
+    private static void amountOfAllItems(ChestCounter mod, MessagePrinter printer) {
+        amountOfItems(mod, printer, "");
     }
 
-    private void amountOfItems(MessagePrinter printer, String queryString) {
+    private static void amountOfItems(ChestCounter mod, MessagePrinter printer, String queryString) {
         Map<String, AmountResult> amount = mod.chestService.getItemCounts(Helper.instance.getWorldID(), queryString);
 
         if (!queryString.isEmpty()) {
@@ -92,39 +84,9 @@ public class ChestCommand implements ICommand {
         printer.printAmounts(amount);
     }
 
-    @Override
-    public String getName() {
-        return "chest";
-    }
-
-    @Override
-    public String getUsage(ICommandSender sender) {
-        return "Usage: /chest [item name]";
-    }
-
-    @Override
-    public List<String> getAliases() {
-        return new ArrayList<>(Collections.singletonList("c"));
-    }
-
-    @Override
-    public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
-        return true;
-    }
-
-    @Override
-    public List<String> getTabCompletions(MinecraftServer server, ICommandSender sender, String[] args,
-                                          @Nullable BlockPos targetPos) {
-        return new ArrayList<>();
-    }
-
-    @Override
-    public boolean isUsernameIndex(String[] args, int index) {
-        return false;
-    }
-
-    @Override
-    public int compareTo(ICommand iCommand) {
-        return 0;
-    }
+// TODO clean this up
+//    @Override
+//    public boolean checkPermission(MinecraftServer server, ICommandSender sender) {
+//        return true;
+//    }
 }
