@@ -197,7 +197,7 @@ if (curseKey && hasProperty('curse_id')) {
             id = curse_id
             changelog = "Changes..."
             releaseType = curseReleaseType
-            addGameVersion minecraft.version
+            addGameVersion minecraft_version
 
             if (hasProperty('curseExtraVersions')) {
                 for (version in curseExtraVersions) {
