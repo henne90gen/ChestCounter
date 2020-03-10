@@ -5,7 +5,7 @@ sudo: false
 jobs:
   include:
     - stage: build
-      script: "./gradlew setupCI build test"
+      script: "./gradlew build test"
     - stage: deploy
       if: tag IS present
       script: "./gradlew curseforge"
