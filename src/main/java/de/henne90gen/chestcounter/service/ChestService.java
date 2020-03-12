@@ -33,7 +33,7 @@ public class ChestService implements IChestService {
 		}
 		String id = chest.id;
 		Map<String, Integer> items = chest.items;
-		LOGGER.info("Saving " + id + " with " + items.toString());
+		LOGGER.trace("Saving " + id + " with " + items.toString());
 		try {
 			Chests chests = db.loadChests(chest.worldID);
 			if (chests == null) {
@@ -90,28 +90,24 @@ public class ChestService implements IChestService {
 	}
 
 	@Override
-	public void updateLabel(Chest chest) {
-		if (chest == null) {
+	public void updateLabel(String worldId, String chestId, String label) {
+		if (worldId == null || chestId == null || label == null) {
 			return;
 		}
-		LOGGER.info("Updating label of " + chest.id + " to " + chest.label);
-		try {
-			Chests chests = db.loadChests(chest.worldID);
-			if (chests == null) {
-				chests = new Chests();
-			}
-
-			ChestContent chestContent = chests.get(chest.id);
-			if (chestContent == null) {
-				chestContent = new ChestContent();
-			}
-			chestContent.label = chest.label;
-			chests.put(chest.id, chestContent);
-
-			db.saveChests(chests, chest.worldID);
-		} catch (Exception e) {
-			LOGGER.error(e);
+		LOGGER.info("Updating label of " + chestId + " to " + label);
+		Chests chests = db.loadChests(worldId);
+		if (chests == null) {
+			chests = new Chests();
 		}
+
+		ChestContent chestContent = chests.get(chestId);
+		if (chestContent == null) {
+			chestContent = new ChestContent();
+		}
+		chestContent.label = label;
+		chests.put(chestId, chestContent);
+
+		db.saveChests(chests, worldId);
 	}
 
 	@Override
@@ -156,11 +152,20 @@ public class ChestService implements IChestService {
 	}
 
 	@Override
-	public ChestContent searchForChest(String worldID, String chestId) {
+	public Chest getChest(String worldID, String chestId) {
 		Chests chests = db.loadChests(worldID);
 		for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
 			if (entry.getKey().contains(chestId) || chestId.contains(entry.getKey())) {
-				return entry.getValue();
+				Chest chest = new Chest();
+				chest.worldID = worldID;
+				chest.id = chestId;
+				String label = entry.getValue().label;
+				if (label == null || label.isEmpty()) {
+					label = chestId;
+				}
+				chest.label = label;
+				chest.items = entry.getValue().items;
+				return chest;
 			}
 		}
 		return null;
@@ -177,11 +182,20 @@ public class ChestService implements IChestService {
 		for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
 			for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
 				if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
-					// TODO rewrite this
-//                        AmountResult itemAmount = amount.getOrDefault(itemEntry.getKey(), new AmountResult());
-//                        itemAmount.amount += itemEntry.getValue();
-//                        itemAmount.labels.add(chestEntry.getValue().label);
-//                        amount.put(itemEntry.getKey(), itemAmount);
+					String label;
+					if (chestEntry.getValue().label == null || chestEntry.getValue().label.isEmpty()) {
+						label = chestEntry.getKey();
+					} else {
+						label = chestEntry.getValue().label;
+					}
+
+					Map<String, Integer> amountMap = result.getOrDefault(label, new LinkedHashMap<>());
+					Integer amount = amountMap.getOrDefault(itemEntry.getKey(), 0);
+
+					amount += itemEntry.getValue();
+
+					amountMap.put(itemEntry.getKey(), amount);
+					result.put(label, amountMap);
 				}
 			}
 		}

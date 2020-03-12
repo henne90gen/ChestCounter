@@ -6,7 +6,7 @@ import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.db.entities.Chests;
 import de.henne90gen.chestcounter.service.ChestService;
 import de.henne90gen.chestcounter.service.dtos.Chest;
-import org.junit.Ignore;
+import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,18 +18,6 @@ import static org.junit.Assert.*;
 
 @SuppressWarnings("ALL")
 public class ChestServiceTest {
-
-	@Test
-	@Ignore
-	public void getAllLabels() {
-
-	}
-
-	@Test
-	@Ignore
-	public void searchForChest() {
-
-	}
 
 	@Test
 	public void getLabelItemCount() {
@@ -69,12 +57,7 @@ public class ChestServiceTest {
 		String worldID = "TestWorld:0";
 		String chestID = "1,2,3";
 		String chestLabel = "TestLabel";
-		Chest chest = new Chest();
-		chest.worldID = worldID;
-		chest.id = chestID;
-		chest.label = chestLabel;
-
-		chestService.updateLabel(chest);
+		chestService.updateLabel(worldID, chestID, chestLabel);
 
 		Chests chests = db.loadChests(worldID);
 		assertNotNull(chests);
@@ -95,15 +78,11 @@ public class ChestServiceTest {
 		String chestLabel = "TestLabel";
 		String itemName = "Glass";
 		int itemAmount = 5;
-		Chest chest = new Chest();
-		chest.worldID = worldID;
-		chest.id = chestID;
-		String newChestLabel = "NewTestLabel";
-		chest.label = newChestLabel;
 
 		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
 
-		chestService.updateLabel(chest);
+		String newChestLabel = "NewTestLabel";
+		chestService.updateLabel(worldID, chestID, newChestLabel);
 
 		Chest saveChest = new Chest();
 		saveChest.id = chestID;
@@ -136,12 +115,8 @@ public class ChestServiceTest {
 
 		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
 
-		Chest chest = new Chest();
-		chest.worldID = worldID;
-		chest.id = chestID;
 		String newChestLabel = "NewTestLabel";
-		chest.label = newChestLabel;
-		chestService.updateLabel(chest);
+		chestService.updateLabel(worldID, chestID, newChestLabel);
 
 		List<Chest> chests = chestService.getChests(worldID);
 		assertNotNull(chests);
@@ -208,7 +183,7 @@ public class ChestServiceTest {
 	}
 
 	@Test
-	public void saveToEmptyDB() throws IOException, InterruptedException {
+	public void saveToEmptyDB() {
 		InMemoryChestDB db = new InMemoryChestDB();
 		ChestService chestService = new ChestService(db);
 
@@ -233,6 +208,52 @@ public class ChestServiceTest {
 		assertEquals(1, items.size());
 		assertTrue(items.containsKey(itemName));
 		assertEquals(new Integer(itemAmount), items.get(itemName));
+	}
+
+	@Test
+	public void getItemCountsWorks() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
+
+		String chestID = "1,2,3";
+		String worldID = "TestWorld:0";
+
+		Chest chest = new Chest();
+		chest.id = chestID;
+		chest.worldID = worldID;
+		chest.items.put("Glass", 5);
+		chest.items.put("Sand", 32);
+		chestService.save(chest);
+
+		ChestSearchResult searchResult = chestService.getItemCounts(worldID, "sa");
+		assertNotNull(searchResult);
+		assertEquals(1, searchResult.size());
+		assertTrue(searchResult.containsKey(chestID));
+		Map<String, Integer> chestResult = searchResult.get(chestID);
+		assertTrue(chestResult.containsKey("Sand"));
+		assertEquals(new Integer(32), chestResult.get("Sand"));
+	}
+
+	@Test
+	public void getChestWorks() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
+
+		String chestID = "1,2,3";
+		String worldID = "TestWorld:0";
+
+		Chest chest = new Chest();
+		chest.id = chestID;
+		chest.worldID = worldID;
+		chest.items.put("Glass", 5);
+		chestService.save(chest);
+
+		Chest chestResult = chestService.getChest(worldID, chestID);
+		assertNotNull(chestResult);
+		assertEquals(worldID, chestResult.worldID);
+		assertEquals(chestID, chestResult.id);
+		assertEquals(chestID, chestResult.label);
+		assertEquals(1, chestResult.items.size());
 	}
 
 	private void writeDataToDB(ChestDB db, String worldID, String chestID, String chestLabel, String itemName, int itemAmount) {

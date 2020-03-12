@@ -29,7 +29,7 @@ public class Helper {
         thread.start();
     }
 
-    public String createChestID(List<BlockPos> positions) {
+    public String getChestId(List<BlockPos> positions) {
         // copy and sort incoming list
         positions = new ArrayList<>(positions);
         positions.sort(getBlockPosComparator());

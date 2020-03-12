@@ -1,6 +1,5 @@
 package de.henne90gen.chestcounter.service;
 
-import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 
@@ -14,15 +13,22 @@ public interface IChestService {
 
 	void delete(String worldId, String chestId);
 
-	void updateLabel(Chest chest);
+	void updateLabel(String worldId, String chestId, String label);
 
 	Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label)
 			throws IOException;
 
 	Map<String, List<String>> getAllLabels(String worldID);
 
-	ChestContent searchForChest(String worldId, String chestId);
+	Chest getChest(String worldID, String chestId);
 
+	/**
+	 * TODO sort this by chest label and then by item name (different interface is necessary)
+	 *
+	 * @param worldID
+	 * @param queryString
+	 * @return
+	 */
 	ChestSearchResult getItemCounts(String worldID, String queryString);
 
 	List<Chest> getChests(String worldID);

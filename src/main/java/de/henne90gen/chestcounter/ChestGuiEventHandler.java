@@ -1,17 +1,23 @@
 package de.henne90gen.chestcounter;
 
-import de.henne90gen.chestcounter.service.dtos.AmountResult;
+import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.inventory.ChestScreen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.tileentity.ChestTileEntity;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Map;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -22,6 +28,8 @@ public class ChestGuiEventHandler {
 	private static final int MARGIN = 5;
 
 	private final ChestCounter mod;
+
+	private Chest currentChest = null;
 
 	private TextFieldWidget searchField = null;
 	private ChestSearchResult lastSearchResult = null;
@@ -51,14 +59,18 @@ public class ChestGuiEventHandler {
 			event.addWidget(searchField);
 
 			if (event.getGui() instanceof ChestScreen) {
-				LOGGER.info("Opened chest");
-				int width = 100;
+				int width = 75;
+				int offsetLeft = 40;
+				int offsetTop = 5;
 				labelField = new TextFieldWidget(
 						Minecraft.getInstance().fontRenderer,
-						guiLeft - width, guiTop,
-						width, 15,
+						guiLeft + offsetLeft, guiTop + offsetTop,
+						width, 10,
 						"Chest Label"
 				);
+				if (currentChest != null) {
+					labelField.setText(currentChest.label);
+				}
 				event.addWidget(labelField);
 			}
 		}
@@ -67,13 +79,26 @@ public class ChestGuiEventHandler {
 	@SubscribeEvent
 	public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
-			event.setCanceled(searchField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
-			if (event.getKeyCode() == 69 /*e*/ && searchField.isFocused()) {
-				event.setCanceled(true);
-			}
+			keyPressedOnTextField(event, searchField);
 			if (event.isCanceled()) {
 				lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+			} else {
+				if (event.getGui() instanceof ChestScreen) {
+					keyPressedOnTextField(event, labelField);
+					if (event.isCanceled()) {
+						if (currentChest != null) {
+							mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
+						}
+					}
+				}
 			}
+		}
+	}
+
+	private void keyPressedOnTextField(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event, TextFieldWidget textField) {
+		event.setCanceled(textField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
+		if (event.getKeyCode() == 69 /*e*/ && textField.isFocused()) {
+			event.setCanceled(true);
 		}
 	}
 
@@ -81,6 +106,28 @@ public class ChestGuiEventHandler {
 	public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
 			event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
+			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+
+			if (event.getGui() instanceof ChestScreen) {
+				event.setCanceled(labelField.charTyped(event.getCodePoint(), event.getModifiers()));
+				// TODO update label for newly created chest
+				if (currentChest != null && event.isCanceled()) {
+					mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
+				}
+			}
+		}
+	}
+
+	@SubscribeEvent
+	public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Post event) {
+		if (event.getGui() instanceof ContainerScreen) {
+			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+		}
+	}
+
+	@SubscribeEvent
+	public void mouseReleased(GuiScreenEvent.MouseReleasedEvent.Post event) {
+		if (event.getGui() instanceof ContainerScreen) {
 			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
 		}
 	}
@@ -101,16 +148,30 @@ public class ChestGuiEventHandler {
 
 		int RESULT_MARGIN = 25;
 		int currentY = guiTop + RESULT_MARGIN;
-		// TODO rewrite this
-//		for (Map.Entry<String, AmountResult> entry : lastSearchResult.entrySet()) {
-//			Minecraft.getInstance().fontRenderer.drawString(entry.getKey(), guiLeft + xSize + MARGIN, currentY, 0xffffff);
-//			currentY += MARGIN * 2;
-//			AmountResult value = entry.getValue();
-//			for (Map.Entry<String, Integer> amountEntry : entry.getValue().entrySet()) {
-//				String amountString = amountEntry.getKey() + ": " + amountEntry.getValue();
-//				Minecraft.getInstance().fontRenderer.drawString(amountString, guiLeft + xSize + MARGIN, currentY, 0xffffff);
-//				currentY += MARGIN * 2;
-//			}
-//		}
+		for (Map.Entry<String, Map<String, Integer>> entry : lastSearchResult.entrySet()) {
+			Minecraft.getInstance().fontRenderer.drawString(entry.getKey(), guiLeft + xSize + MARGIN, currentY, 0xffffff);
+			currentY += MARGIN * 2;
+			Map<String, Integer> value = entry.getValue();
+			for (Map.Entry<String, Integer> amountEntry : value.entrySet()) {
+				String amountString = amountEntry.getKey() + ": " + amountEntry.getValue();
+				int xOffset = MARGIN * 2;
+				Minecraft.getInstance().fontRenderer.drawString(amountString, guiLeft + xSize + MARGIN + xOffset, currentY, 0xffffff);
+				currentY += MARGIN * 2;
+			}
+			currentY += MARGIN;
+		}
+	}
+
+	@SubscribeEvent
+	public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
+		BlockPos pos = event.getPos();
+		World world = event.getWorld();
+		TileEntity tileEntity = world.getTileEntity(pos);
+		if (tileEntity instanceof ChestTileEntity) {
+			String worldId = Helper.instance.getWorldID();
+			List<BlockPos> chestPositions = Helper.instance.getChestPositions(world, pos);
+			String chestId = Helper.instance.getChestId(chestPositions);
+			currentChest = mod.chestService.getChest(worldId, chestId);
+		}
 	}
 }

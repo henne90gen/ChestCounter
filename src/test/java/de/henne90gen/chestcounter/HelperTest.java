@@ -67,13 +67,13 @@ public class HelperTest {
         blockPos.add(blockPos2);
         blockPos.add(blockPos1);
 
-        String chestID = Helper.instance.createChestID(blockPos);
+        String chestID = Helper.instance.getChestId(blockPos);
         assertEquals("1,2,3:2,2,3", chestID);
     }
 
     @Test
     public void createsChestIDForSingleChestCorrectly() {
-        String chestID = Helper.instance.createChestID(
+        String chestID = Helper.instance.getChestId(
                 Collections.singletonList(new BlockPos(1, 2, 3))
         );
         assertEquals("1,2,3", chestID);

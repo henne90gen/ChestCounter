@@ -65,7 +65,7 @@ public class ChestEventHandler {
 
 			chest = new Chest();
 			chest.worldID = Helper.instance.getWorldID();
-			chest.id = Helper.instance.createChestID(chestPositions);
+			chest.id = Helper.instance.getChestId(chestPositions);
 			chest.items = countItems(currentContainer);
 			mod.chestService.save(chest);
 		}
@@ -112,7 +112,7 @@ public class ChestEventHandler {
 		TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
 		if (tileEntity instanceof ChestTileEntity) {
 			String worldId = Helper.instance.getWorldID();
-			String chestId = Helper.instance.createChestID(Collections.singletonList(event.getPos()));
+			String chestId = Helper.instance.getChestId(Collections.singletonList(event.getPos()));
 
 			mod.chestService.delete(worldId, chestId);
 
@@ -127,7 +127,7 @@ public class ChestEventHandler {
 				if (entity instanceof ChestTileEntity) {
 					Chest chest = new Chest();
 					chest.worldID = Helper.instance.getWorldID();
-					chest.id = Helper.instance.createChestID(Collections.singletonList(position));
+					chest.id = Helper.instance.getChestId(Collections.singletonList(position));
 					Helper.instance.runInThread(() -> mod.chestService.save(chest));
 					break;
 				}
@@ -146,7 +146,7 @@ public class ChestEventHandler {
 			Chest chest = new Chest();
 			chest.worldID = Helper.instance.getWorldID();
 			List<BlockPos> chestPositions = Helper.instance.getChestPositions(event.getWorld(), event.getPos());
-			chest.id = Helper.instance.createChestID(chestPositions);
+			chest.id = Helper.instance.getChestId(chestPositions);
 			Helper.instance.runInThread(() -> mod.chestService.save(chest));
 		}
 	}
