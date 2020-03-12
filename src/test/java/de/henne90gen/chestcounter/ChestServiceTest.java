@@ -1,238 +1,247 @@
 package de.henne90gen.chestcounter;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Map;
-
 import de.henne90gen.chestcounter.db.ChestDB;
+import de.henne90gen.chestcounter.db.InMemoryChestDB;
+import de.henne90gen.chestcounter.db.entities.ChestContent;
+import de.henne90gen.chestcounter.db.entities.Chests;
 import de.henne90gen.chestcounter.service.ChestService;
-import de.henne90gen.chestcounter.dtos.Chest;
-import de.henne90gen.chestcounter.dtos.Chests;
+import de.henne90gen.chestcounter.service.dtos.Chest;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
 @SuppressWarnings("ALL")
 public class ChestServiceTest {
 
-    @Test
-    @Ignore
-    public void getAllLabels() {
+	@Test
+	@Ignore
+	public void getAllLabels() {
 
-    }
+	}
 
-    @Test
-    @Ignore
-    public void searchForChest() {
+	@Test
+	@Ignore
+	public void searchForChest() {
 
-    }
+	}
 
-    @Test
-    public void getLabelItemCount() throws IOException {
-        String filename = "./label-item-count-test.json";
-        String worldID = "TestWorld:0";
+	@Test
+	public void getLabelItemCount() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        String testLabel = "test";
-        Chest chest1 = new Chest();
-        chest1.id = "1,2,3";
-        chest1.worldID = worldID;
-        chest1.chestContent.label = testLabel;
-        chest1.chestContent.items.put("Glass", 1);
-        chestService(filename).save(chest1);
+		String worldID = "TestWorld:0";
 
-        Chest chest2 = new Chest();
-        chest2.id = "4,5,6";
-        chest2.worldID = worldID;
-        chest2.chestContent.label = "another";
-        chest2.chestContent.items.put("Glass", 2);
-        chest2.chestContent.items.put("Sand", 3);
-        chestService(filename).save(chest2);
+		String testLabel = "test";
+		Chest chest1 = new Chest();
+		chest1.id = "1,2,3";
+		chest1.worldID = worldID;
+		chest1.label = testLabel;
+		chest1.items.put("Glass", 1);
+		chestService.save(chest1);
 
-        Map<String, Integer> itemCounts = chestService(filename).getItemCountsForLabel(worldID, testLabel);
-        assertNotNull(itemCounts);
-        assertEquals(1, itemCounts.size());
-        assertTrue(itemCounts.containsKey("Glass"));
-        assertEquals(new Integer(1), itemCounts.get("Glass"));
+		Chest chest2 = new Chest();
+		chest2.id = "4,5,6";
+		chest2.worldID = worldID;
+		chest2.label = "another";
+		chest2.items.put("Glass", 2);
+		chest2.items.put("Sand", 3);
+		chestService.save(chest2);
 
-        new File(filename).delete();
-    }
+		Map<String, Integer> itemCounts = chestService.getItemCountsForLabel(worldID, testLabel);
+		assertNotNull(itemCounts);
+		assertEquals(1, itemCounts.size());
+		assertTrue(itemCounts.containsKey("Glass"));
+		assertEquals(new Integer(1), itemCounts.get("Glass"));
+	}
 
-    @Test
-    public void updateLabelNoFileExists() throws IOException, InterruptedException {
-        String filename = "./update-label-no-file-test.json";
-        String worldID = "TestWorld:0";
-        String chestID = "1,2,3";
-        String chestLabel = "TestLabel";
-        Chest chest = new Chest();
-        chest.worldID = worldID;
-        chest.id = chestID;
-        chest.chestContent.label = chestLabel;
+	@Test
+	public void updateLabelNoData() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        chestService(filename).updateLabel(chest);
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		chest.label = chestLabel;
 
-        assertFalse(new File(filename).exists());
-    }
+		chestService.updateLabel(chest);
 
-    @Test
-    public void saveDoesNotDropLabel() throws IOException, InterruptedException {
-        String filename = "./update-label-save-test.json";
-        String worldID = "TestWorld:0";
-        String chestID = "1,2,3";
-        String chestLabel = "TestLabel";
-        String itemName = "Glass";
-        int itemAmount = 5;
-        Chest chest = new Chest();
-        chest.worldID = worldID;
-        chest.id = chestID;
-        String newChestLabel = "NewTestLabel";
-        chest.chestContent.label = newChestLabel;
+		Chests chests = db.loadChests(worldID);
+		assertNotNull(chests);
+		assertEquals(1, chests.size());
+		assertTrue(chests.containsKey(chestID));
+		ChestContent resultChest = chests.get(chestID);
+		assertEquals(chestLabel, resultChest.label);
+		assertEquals(0, resultChest.items.size());
+	}
 
-        File jsonFile = new File(filename);
-		TestHelper.writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+	@Test
+	public void saveDoesNotDropLabel() throws IOException, InterruptedException {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        chestService(filename).updateLabel(chest);
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		String newChestLabel = "NewTestLabel";
+		chest.label = newChestLabel;
 
-        Chest saveChest = new Chest();
-        saveChest.id = chestID;
-        saveChest.worldID = worldID;
-        saveChest.chestContent.items.put("Glass", 5);
-        chestService(filename).save(saveChest);
+		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
 
-        Chests chests = chestService(filename).getChests(worldID);
-        assertTrue(chests.containsKey(chestID));
-        assertEquals(newChestLabel, chests.get(chestID).label);
+		chestService.updateLabel(chest);
 
-        jsonFile.delete();
-    }
+		Chest saveChest = new Chest();
+		saveChest.id = chestID;
+		saveChest.worldID = worldID;
+		saveChest.items.put("Glass", 5);
+		chestService.save(saveChest);
 
-    @Test
-    public void updateLabel() throws IOException, InterruptedException {
-        String filename = "./update-label-test.json";
-        String worldID = "TestWorld:0";
-        String chestID = "1,2,3";
-        String chestLabel = "TestLabel";
-        String itemName = "Glass";
-        int itemAmount = 5;
-        Chest chest = new Chest();
-        chest.worldID = worldID;
-        chest.id = chestID;
-        String newChestLabel = "NewTestLabel";
-        chest.chestContent.label = newChestLabel;
+		List<Chest> chests = chestService.getChests(worldID);
+		assertNotNull(chests);
+		assertEquals(1, chests.size());
+		Chest resultChest = chests.get(0);
+		assertEquals(worldID, resultChest.worldID);
+		assertEquals(chestID, resultChest.id);
+		assertEquals(newChestLabel, resultChest.label);
+		assertEquals(1, resultChest.items.size());
+		assertTrue(resultChest.items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), resultChest.items.get(itemName));
+	}
 
-        File jsonFile = new File(filename);
-		TestHelper.writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+	@Test
+	public void updateLabel() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        chestService(filename).updateLabel(chest);
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
 
-        Chests chests = chestService(filename).getChests(worldID);
-        assertNotNull(chests);
-        assertTrue(chests.containsKey(chestID));
-        assertEquals(newChestLabel, chests.get(chestID).label);
+		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
 
-        jsonFile.delete();
-    }
+		Chest chest = new Chest();
+		chest.worldID = worldID;
+		chest.id = chestID;
+		String newChestLabel = "NewTestLabel";
+		chest.label = newChestLabel;
+		chestService.updateLabel(chest);
 
-    @Test
-    public void delete() throws IOException, InterruptedException {
-        String filename = "./delete-test.json";
-        String worldID = "TestWorld:0";
-        String chestID = "1,2,3";
-        String chestLabel = "TestLabel";
-        String itemName = "Glass";
-        int itemAmount = 5;
-        Chest chest = new Chest();
-        chest.worldID = worldID;
-        chest.id = chestID;
+		List<Chest> chests = chestService.getChests(worldID);
+		assertNotNull(chests);
+		assertEquals(1, chests.size());
+		Chest resultChest = chests.get(0);
+		assertEquals(worldID, resultChest.worldID);
+		assertEquals(chestID, resultChest.id);
+		assertEquals(newChestLabel, resultChest.label);
+		assertEquals(1, resultChest.items.size());
+		assertTrue(resultChest.items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), resultChest.items.get(itemName));
+	}
 
-        File jsonFile = new File(filename);
-		TestHelper.writeTestFile(jsonFile, worldID, chestID, chestLabel, itemName, itemAmount);
+	@Test
+	public void delete() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        chestService(filename).delete(chest);
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
 
-        Chests chests = chestService(filename).getChests(worldID);
-        assertNotNull(chests);
-        assertEquals(0, chests.size());
+		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
 
-        jsonFile.delete();
-    }
+		chestService.delete(worldID, chestID);
 
-    @Test
-    public void deleteNoFileExists() {
-        Chest chest = new Chest();
-        chest.worldID = "TestWorld:0";
-        chest.id = "1,2,3";
-        String filename = "./delete-no-file-test.json";
-        chestService(filename).delete(chest);
-        assertFalse(new File(filename).exists());
-    }
+		List<Chest> chests = chestService.getChests(worldID);
+		assertNotNull(chests);
+		assertEquals(0, chests.size());
+	}
 
-    @Test
-    public void saveFileExists() throws InterruptedException, IOException {
-        String filename = "./save-no-file-test.json";
-        File chestCounter = new File(filename);
-        String chestID = "1,2,3";
-        String worldID = "TestWorld:0";
-		TestHelper.writeTestFile(chestCounter, worldID, chestID, "TestLabel", "Sand", 5);
+	@Test
+	public void save() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        Chest chest = new Chest();
-        chest.id = chestID;
-        chest.worldID = worldID;
-        String itemName = "Glass";
-        int itemAmount = 5;
-        chest.chestContent.items.put(itemName, itemAmount);
+		String chestID = "1,2,3";
+		String worldID = "TestWorld:0";
 
-        chestService(filename).save(chest);
+		writeDataToDB(db, worldID, chestID, "TestLabel", "Sand", 5);
 
-        Chests chests = chestService(filename).getChests(worldID);
-        assertNotNull(chests);
-        assertTrue(chests.containsKey(chest.id));
-        Map<String, Integer> items = chests.get(chest.id).items;
-        assertNotNull(items);
-        assertEquals(1, items.size());
-        assertTrue(items.containsKey(itemName));
-        assertEquals(new Integer(itemAmount), items.get(itemName));
+		Chest chest = new Chest();
+		chest.id = chestID;
+		chest.worldID = worldID;
+		String itemName = "Glass";
+		int itemAmount = 5;
+		chest.items.put(itemName, itemAmount);
 
-        new File(filename).delete();
-    }
+		chestService.save(chest);
 
-    @Test
-    public void saveNoFileExists() throws IOException, InterruptedException {
-        String filename = "./save-no-file-test.json";
-        Chest chest = new Chest();
-        chest.id = "1,2,3";
-        String worldID = "TestWorld:0";
-        chest.worldID = worldID;
-        String itemName = "Glass";
-        int itemAmount = 5;
-        chest.chestContent.items.put(itemName, itemAmount);
-        String chestLabel = "TestLabel";
-        chest.chestContent.label = chestLabel;
+		List<Chest> chests = chestService.getChests(worldID);
+		assertNotNull(chests);
+		assertEquals(1, chests.size());
+		Chest resultChest = chests.get(0);
+		assertEquals(worldID, resultChest.worldID);
+		assertEquals(chestID, resultChest.id);
+		Map<String, Integer> items = chests.get(0).items;
+		assertNotNull(items);
+		assertEquals(1, items.size());
+		assertTrue(items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), items.get(itemName));
+	}
 
-        chestService(filename).save(chest);
+	@Test
+	public void saveToEmptyDB() throws IOException, InterruptedException {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
 
-        File jsonFile = new File(filename);
-        assertTrue(jsonFile.exists());
+		String worldID = "TestWorld:0";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		String chestLabel = "TestLabel";
+		Chest chest = new Chest();
+		chest.id = "1,2,3";
+		chest.worldID = worldID;
+		chest.label = chestLabel;
+		chest.items.put(itemName, itemAmount);
 
-        Chests chests = chestService(filename).getChests(worldID);
-        assertNotNull(chests);
-        assertTrue(chests.containsKey(chest.id));
-        assertEquals(chestLabel, chests.get(chest.id).label);
-        Map<String, Integer> items = chests.get(chest.id).items;
-        assertNotNull(items);
-        assertEquals(1, items.size());
-        assertTrue(items.containsKey(itemName));
-        assertEquals(new Integer(itemAmount), items.get(itemName));
+		chestService.save(chest);
 
-        jsonFile.delete();
-    }
+		Chests chests = db.loadChests(worldID);
+		assertNotNull(chests);
+		assertTrue(chests.containsKey(chest.id));
+		assertEquals(chestLabel, chests.get(chest.id).label);
+		Map<String, Integer> items = chests.get(chest.id).items;
+		assertNotNull(items);
+		assertEquals(1, items.size());
+		assertTrue(items.containsKey(itemName));
+		assertEquals(new Integer(itemAmount), items.get(itemName));
+	}
 
-    private ChestService chestService(String filename) {
-        return new ChestService(new TestChestCounter(filename), new ChestDB(new ChestCounter(), filename));
-    }
-
-    private ChestService chestService() {
-        return chestService("");
-    }
+	private void writeDataToDB(ChestDB db, String worldID, String chestID, String chestLabel, String itemName, int itemAmount) {
+		Chests chests = new Chests();
+		ChestContent chestContent = new ChestContent();
+		chestContent.label = chestLabel;
+		chestContent.items = new LinkedHashMap<>();
+		chestContent.items.put(itemName, itemAmount);
+		chests.put(chestID, chestContent);
+		db.saveChests(chests, worldID);
+	}
 }

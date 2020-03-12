@@ -1,222 +1,207 @@
 package de.henne90gen.chestcounter.service;
 
-import de.henne90gen.chestcounter.IChestCounter;
-import de.henne90gen.chestcounter.db.IChestDB;
-import de.henne90gen.chestcounter.dtos.AmountResult;
-import de.henne90gen.chestcounter.dtos.Chest;
-import de.henne90gen.chestcounter.dtos.ChestContent;
-import de.henne90gen.chestcounter.dtos.Chests;
+import de.henne90gen.chestcounter.db.ChestDB;
+import de.henne90gen.chestcounter.db.entities.ChestContent;
+import de.henne90gen.chestcounter.db.entities.Chests;
+import de.henne90gen.chestcounter.service.dtos.Chest;
+import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ChestService implements IChestService {
 
-    private final IChestCounter mod;
+	private static final Logger LOGGER = LogManager.getLogger();
 
-    private final IChestDB db;
+	private final ChestDB db;
 
-    public ChestService(IChestCounter mod, IChestDB db) {
-        this.mod = mod;
-        this.db = db;
-    }
+	public ChestService(ChestDB db) {
+		this.db = db;
+	}
 
-    @Override
-    public void save(Chest chest) {
-        if (chest == null) {
-            return;
-        }
-        String id = chest.id;
-        Map<String, Integer> items = chest.chestContent.items;
-        mod.log("Saving " + id + " with " + items.toString());
-        try {
-            Chests chests = db.loadChests(chest.worldID);
-            if (chests == null) {
-                chests = new Chests();
-            }
+	@Override
+	public void save(Chest chest) {
+		if (chest == null) {
+			return;
+		}
+		String id = chest.id;
+		Map<String, Integer> items = chest.items;
+		LOGGER.info("Saving " + id + " with " + items.toString());
+		try {
+			Chests chests = db.loadChests(chest.worldID);
+			if (chests == null) {
+				chests = new Chests();
+			}
 
-            // Create copy of keySet to prevent ConcurrentModificationException
-            HashSet<String> keys = new HashSet<>(chests.keySet());
-            // Remove all chests that are now part of this chest, but keep their labels
-            for (String key : keys) {
-                if (id.contains(key)) {
-                    ChestContent chestContent = chests.remove(key);
-                    if (chestContent.label != null) {
-                        chest.chestContent.label = chestContent.label;
-                    }
-                    break;
-                }
-            }
+			// Create copy of keySet to prevent ConcurrentModificationException
+			HashSet<String> keys = new HashSet<>(chests.keySet());
+			// Remove all chests that are now part of this chest, but keep their labels
+			for (String key : keys) {
+				if (id.contains(key)) {
+					ChestContent chestContent = chests.remove(key);
+					if (chestContent.label != null) {
+						chest.label = chestContent.label;
+					}
+					break;
+				}
+			}
+			ChestContent chestContent = new ChestContent();
+			chestContent.label = chest.label;
+			chestContent.items = chest.items;
+			chests.put(id, chestContent);
 
-            chests.put(id, chest.chestContent);
+			db.saveChests(chests, chest.worldID);
+		} catch (Exception e) {
+			LOGGER.error(e);
+		}
+	}
 
-            db.saveChests(chests, chest.worldID);
-        } catch (Exception e) {
-            mod.logError(e);
-        }
-    }
+	@Override
+	public void delete(String worldId, String chestId) {
+		if (worldId == null || chestId == null) {
+			return;
+		}
+		LOGGER.info("Deleting " + chestId);
+		try {
+			Chests chests = db.loadChests(worldId);
+			if (chests == null) {
+				return;
+			}
 
-    @Override
-    public void delete(Chest chest) {
-        if (chest == null) {
-            return;
-        }
-        mod.log("Deleting " + chest.id);
-        try {
-            Chests chests = db.loadChests(chest.worldID);
-            if (chests == null) {
-                return;
-            }
+			// Create copy of keySet to prevent ConcurrentModificationException
+			HashSet<String> keys = new HashSet<>(chests.keySet());
+			for (String key : keys) {
+				if (key.contains(chestId)) {
+					chests.remove(key);
+				}
+			}
 
-            // Create copy of keySet to prevent ConcurrentModificationException
-            HashSet<String> keys = new HashSet<>(chests.keySet());
-            for (String key : keys) {
-                if (key.contains(chest.id)) {
-                    chests.remove(key);
-                }
-            }
+			db.saveChests(chests, worldId);
+		} catch (Exception e) {
+			LOGGER.error(e);
+		}
+	}
 
-            db.saveChests(chests, chest.worldID);
-        } catch (Exception e) {
-            mod.logError(e);
-        }
-    }
+	@Override
+	public void updateLabel(Chest chest) {
+		if (chest == null) {
+			return;
+		}
+		LOGGER.info("Updating label of " + chest.id + " to " + chest.label);
+		try {
+			Chests chests = db.loadChests(chest.worldID);
+			if (chests == null) {
+				chests = new Chests();
+			}
 
-    @Override
-    public void updateLabel(Chest chest) {
-        if (chest == null) {
-            return;
-        }
-        mod.log("Updating label of " + chest.id + " to " + chest.chestContent.label);
-        try {
-            Chests chests = db.loadChests(chest.worldID);
-            if (chests == null) {
-                return;
-            }
+			ChestContent chestContent = chests.get(chest.id);
+			if (chestContent == null) {
+				chestContent = new ChestContent();
+			}
+			chestContent.label = chest.label;
+			chests.put(chest.id, chestContent);
 
-            for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
-                if (entry.getKey().equals(chest.id)) {
-                    entry.getValue().label = chest.chestContent.label;
-                }
-            }
+			db.saveChests(chests, chest.worldID);
+		} catch (Exception e) {
+			LOGGER.error(e);
+		}
+	}
 
-            db.saveChests(chests, chest.worldID);
-        } catch (Exception e) {
-            mod.logError(e);
-        }
-    }
+	@Override
+	public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label) {
+		LOGGER.info("Querying for " + label + " in world " + worldID);
+		Map<String, Integer> itemCounts = new LinkedHashMap<>();
+		Chests chests = db.loadChests(worldID);
 
-    @Override
-    public Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label) {
-        try {
-            mod.log("Querying for " + label + " in world " + worldID);
-            Map<String, Integer> itemCounts = new LinkedHashMap<>();
-            Chests chests = db.loadChests(worldID);
+		for (ChestContent chestContent : chests.values()) {
+			if (!label.equals(chestContent.label)) {
+				continue;
+			}
 
-            for (ChestContent chestContent : chests.values()) {
-                if (!label.equals(chestContent.label)) {
-                    continue;
-                }
+			for (Map.Entry<String, Integer> entry : chestContent.items.entrySet()) {
+				Integer amount = itemCounts.getOrDefault(entry.getKey(), 0);
+				amount += entry.getValue();
+				if (amount > 0) {
+					itemCounts.put(entry.getKey(), amount);
+				}
+			}
+		}
 
-                for (Map.Entry<String, Integer> entry : chestContent.items.entrySet()) {
-                    Integer amount = itemCounts.getOrDefault(entry.getKey(), 0);
-                    amount += entry.getValue();
-                    if (amount > 0) {
-                        itemCounts.put(entry.getKey(), amount);
-                    }
-                }
-            }
+		return itemCounts;
+	}
 
-            return itemCounts;
-        } catch (IOException e) {
-            mod.logError(e);
-            return null;
-        }
-    }
+	@Override
+	public Map<String, List<String>> getAllLabels(String worldID) {
+		Chests chests = db.loadChests(worldID);
+		return chests.values()
+				.stream()
+				.map(chestContent -> chestContent.label)
+				.distinct()
+				.collect(Collectors.toMap(label -> label, label -> findChests(chests, label)));
+	}
 
-    @Override
-    public Map<String, List<String>> getAllLabels(String worldID) {
-        try {
-            Chests chests = db.loadChests(worldID);
-            return chests.values()
-                    .stream()
-                    .map(chestContent -> chestContent.label)
-                    .distinct()
-                    .collect(Collectors.toMap(label -> label, label -> findChests(chests, label)));
-        } catch (IOException e) {
-            mod.logError(e);
-            return Collections.emptyMap();
-        }
-    }
+	private List<String> findChests(Chests chests, String label) {
+		return chests.entrySet()
+				.stream()
+				.filter(entry -> label.equals(entry.getValue().label))
+				.map(Map.Entry::getKey)
+				.collect(Collectors.toList());
+	}
 
-    private List<String> findChests(Chests chests, String label) {
-        return chests.entrySet()
-                .stream()
-                .filter(entry -> label.equals(entry.getValue().label))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-    }
+	@Override
+	public ChestContent searchForChest(String worldID, String chestId) {
+		Chests chests = db.loadChests(worldID);
+		for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
+			if (entry.getKey().contains(chestId) || chestId.contains(entry.getKey())) {
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
 
-    @Override
-    public ChestContent searchForChest(Chest chest) {
-        try {
-            Chests chests = db.loadChests(chest.worldID);
-            for (Map.Entry<String, ChestContent> entry : chests.entrySet()) {
-                if (entry.getKey().contains(chest.id) || chest.id.contains(entry.getKey())) {
-                    return entry.getValue();
-                }
-            }
-            return null;
-        } catch (IOException e) {
-            mod.logError(e);
-            return null;
-        }
-    }
+	@Override
+	public ChestSearchResult getItemCounts(String worldID, String queryString) {
+		ChestSearchResult result = new ChestSearchResult();
+		Chests chests = db.loadChests(worldID);
+		if (chests == null) {
+			return result;
+		}
 
-    @Override
-    public Map<String, AmountResult> getItemCounts(String worldID, String queryString) {
-        try {
-            Chests chests = db.loadChests(worldID);
-            if (chests == null) {
-                return Collections.emptyMap();
-            }
+		for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
+			for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
+				if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
+					// TODO rewrite this
+//                        AmountResult itemAmount = amount.getOrDefault(itemEntry.getKey(), new AmountResult());
+//                        itemAmount.amount += itemEntry.getValue();
+//                        itemAmount.labels.add(chestEntry.getValue().label);
+//                        amount.put(itemEntry.getKey(), itemAmount);
+				}
+			}
+		}
+		return result;
+	}
 
-            Map<String, AmountResult> amount = new LinkedHashMap<>();
-            for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
-                for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
-                    if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
-                        AmountResult itemAmount = amount.getOrDefault(itemEntry.getKey(), new AmountResult());
-                        itemAmount.amount += itemEntry.getValue();
-                        itemAmount.labels.add(chestEntry.getValue().label);
-                        amount.put(itemEntry.getKey(), itemAmount);
-                    }
-                }
-            }
-            return amount;
-        } catch (IOException e) {
-            mod.logError(e);
-        }
-        return Collections.emptyMap();
-    }
+	@Override
+	public List<Chest> getChests(String worldId) {
+		Chests chests = db.loadChests(worldId);
+		return chests.entrySet().stream().map(this.convertChestsEntryToChest(worldId)).collect(Collectors.toList());
+	}
 
-    @Override
-    public Chests getChests(String worldID) {
-        try {
-            return db.loadChests(worldID);
-        } catch (IOException e) {
-            mod.logError(e);
-            return new Chests();
-        }
-    }
-
-    @Override
-    public void deleteWorld(String worldID) {
-        try {
-            db.deleteWorld(worldID);
-        } catch (IOException e) {
-            mod.logError(e);
-        }
-    }
+	private Function<Map.Entry<String, ChestContent>, Chest> convertChestsEntryToChest(String worldId) {
+		return (entry) -> {
+			Chest chest = new Chest();
+			chest.worldID = worldId;
+			chest.id = entry.getKey();
+			chest.label = entry.getValue().label;
+			chest.items = entry.getValue().items;
+			return chest;
+		};
+	}
 }

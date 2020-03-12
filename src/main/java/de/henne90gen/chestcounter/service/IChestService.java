@@ -1,19 +1,18 @@
 package de.henne90gen.chestcounter.service;
 
+import de.henne90gen.chestcounter.db.entities.ChestContent;
+import de.henne90gen.chestcounter.service.dtos.Chest;
+import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
+
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import de.henne90gen.chestcounter.dtos.AmountResult;
-import de.henne90gen.chestcounter.dtos.Chest;
-import de.henne90gen.chestcounter.dtos.ChestContent;
-import de.henne90gen.chestcounter.dtos.Chests;
-import javax.annotation.Nonnull;
-
 public interface IChestService {
 	void save(Chest chest);
 
-	void delete(Chest chest);
+	void delete(String worldId, String chestId);
 
 	void updateLabel(Chest chest);
 
@@ -22,11 +21,9 @@ public interface IChestService {
 
 	Map<String, List<String>> getAllLabels(String worldID);
 
-	ChestContent searchForChest(Chest chest);
+	ChestContent searchForChest(String worldId, String chestId);
 
-	Map<String, AmountResult> getItemCounts(String worldID, String queryString);
+	ChestSearchResult getItemCounts(String worldID, String queryString);
 
-	Chests getChests(String worldID);
-
-    void deleteWorld(String worldID);
+	List<Chest> getChests(String worldID);
 }

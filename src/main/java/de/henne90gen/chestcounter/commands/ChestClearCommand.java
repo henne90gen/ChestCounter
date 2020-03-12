@@ -15,7 +15,7 @@ public class ChestClearCommand {
                         .executes(context -> {
                             MessagePrinter printer = new MessagePrinter(context.getSource());
                             printer.print("Cleared chest database for this world.");
-                            mod.chestService.deleteWorld(Helper.instance.getWorldID());
+//                            mod.chestService.deleteWorld(Helper.instance.getWorldID());
                             return 0;
                         }));
     }

@@ -1,4 +1,4 @@
-package de.henne90gen.chestcounter.dtos;
+package de.henne90gen.chestcounter.db.entities;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

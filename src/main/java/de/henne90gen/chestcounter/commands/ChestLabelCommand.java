@@ -1,7 +1,5 @@
 package de.henne90gen.chestcounter.commands;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -10,20 +8,15 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.MessagePrinter;
-import de.henne90gen.chestcounter.dtos.Chest;
+import de.henne90gen.chestcounter.service.dtos.Chest;
 
-import javax.annotation.Nullable;
-
-import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.Commands;
 import net.minecraft.entity.Entity;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
-import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,7 +59,7 @@ public class ChestLabelCommand {
                                 Chest chest = new Chest();
                                 chest.id = Helper.instance.createChestID(chestPositions);
                                 chest.worldID = Helper.instance.getWorldID();
-                                chest.chestContent.label = label;
+                                chest.label = label;
 
                                 Helper.instance.runInThread(() -> mod.chestService.updateLabel(chest));
                                 printer.printUpdatedLabel(label);
