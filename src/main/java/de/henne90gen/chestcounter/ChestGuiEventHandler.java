@@ -73,26 +73,38 @@ public class ChestGuiEventHandler {
 				}
 				event.addWidget(labelField);
 			}
+
+			search();
 		}
 	}
 
 	@SubscribeEvent
 	public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
+			// TODO pressing 'l' opens the achievements window -> prevent that from happening while the search box has focus
 			keyPressedOnTextField(event, searchField);
 			if (event.isCanceled()) {
-				lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
-			} else {
-				if (event.getGui() instanceof ChestScreen) {
-					keyPressedOnTextField(event, labelField);
-					if (event.isCanceled()) {
-						if (currentChest != null) {
-							mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
-						}
+				search();
+				return;
+			}
+
+			if (event.getGui() instanceof ChestScreen) {
+				keyPressedOnTextField(event, labelField);
+				if (event.isCanceled()) {
+					if (currentChest != null) {
+						mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
 					}
+					search();
 				}
 			}
 		}
+	}
+
+	private void search() {
+		if (searchField == null) {
+			return;
+		}
+		lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
 	}
 
 	private void keyPressedOnTextField(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event, TextFieldWidget textField) {
@@ -106,29 +118,38 @@ public class ChestGuiEventHandler {
 	public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
 			event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
-			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+			search();
 
 			if (event.getGui() instanceof ChestScreen) {
 				event.setCanceled(labelField.charTyped(event.getCodePoint(), event.getModifiers()));
-				// TODO update label for newly created chest
+				// TODO update label in case currentChest is null
 				if (currentChest != null && event.isCanceled()) {
 					mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
+					search();
 				}
 			}
 		}
 	}
 
 	@SubscribeEvent
-	public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Post event) {
+	public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
-			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+			search();
+			event.setCanceled(searchField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton()));
+			if (labelField != null) {
+				event.setCanceled(labelField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton()));
+			}
 		}
 	}
 
 	@SubscribeEvent
-	public void mouseReleased(GuiScreenEvent.MouseReleasedEvent.Post event) {
+	public void mouseReleased(GuiScreenEvent.MouseReleasedEvent.Pre event) {
 		if (event.getGui() instanceof ContainerScreen) {
-			lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
+			search();
+			event.setCanceled(searchField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton()));
+			if (labelField != null) {
+				event.setCanceled(labelField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton()));
+			}
 		}
 	}
 
