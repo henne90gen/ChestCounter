@@ -51,11 +51,8 @@ public class ChestLabelCommand {
 
 							TileEntity tileEntity = entity.world.getTileEntity(blockPos);
 							if (tileEntity instanceof ChestTileEntity) {
-								List<BlockPos> chestPositions = Helper.instance.getChestPositions(entity.world,
-										blockPos);
-
 								String worldId = Helper.instance.getWorldID();
-								String chestId = Helper.instance.getChestId(chestPositions);
+								String chestId = Helper.instance.getChestId(entity.world, blockPos);
 
 								Helper.instance.runInThread(() -> mod.chestService.updateLabel(worldId, chestId, label));
 								printer.printUpdatedLabel(label);

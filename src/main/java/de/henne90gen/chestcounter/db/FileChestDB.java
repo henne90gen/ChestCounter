@@ -28,7 +28,7 @@ public class FileChestDB implements ChestDB {
 	public Chests loadChests(String worldID) {
 		ChestWorlds worlds = readChestWorlds();
 		if (worlds == null) {
-			return null;
+			return new Chests();
 		}
 		return worlds.get(worldID);
 	}
@@ -40,6 +40,18 @@ public class FileChestDB implements ChestDB {
 			worlds = new ChestWorlds();
 		}
 		worlds.put(worldID, chests);
+
+		writeChestWorlds(worlds);
+	}
+
+	@Override
+	public void deleteWorld(String worldID) {
+		ChestWorlds worlds = readChestWorlds();
+		if (worlds == null) {
+			return;
+		}
+
+		worlds.remove(worldID);
 
 		writeChestWorlds(worlds);
 	}
@@ -82,17 +94,5 @@ public class FileChestDB implements ChestDB {
 			return null;
 		}
 		return storage.worlds;
-	}
-
-	@Override
-	public void deleteWorld(String worldID) {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			return;
-		}
-
-		worlds.remove(worldID);
-
-		writeChestWorlds(worlds);
 	}
 }

@@ -2,14 +2,14 @@ package de.henne90gen.chestcounter.db;
 
 import de.henne90gen.chestcounter.db.entities.Chests;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CacheChestDB implements ChestDB {
 
 	private final ChestDB delegate;
 
-	private final Map<String, Chests> cachedChests = new LinkedHashMap<>();
+	private final Map<String, Chests> cachedChests = new ConcurrentHashMap<>();
 
 	public CacheChestDB(ChestDB delegate) {
 		this.delegate = delegate;
@@ -18,7 +18,8 @@ public class CacheChestDB implements ChestDB {
 	@Override
 	public Chests loadChests(String worldID) {
 		if (!cachedChests.containsKey(worldID)) {
-			cachedChests.put(worldID, delegate.loadChests(worldID));
+			Chests chests = delegate.loadChests(worldID);
+			cachedChests.put(worldID, chests);
 		}
 		return cachedChests.get(worldID);
 	}
