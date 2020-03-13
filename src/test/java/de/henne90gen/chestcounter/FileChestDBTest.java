@@ -21,7 +21,8 @@ public class FileChestDBTest {
 
 		String worldID = "TestWorld:0";
 		Chests result = chestDB.loadChests(worldID);
-		assertNull(result);
+		assertNotNull(result);
+		assertEquals(0, result.size());
 	}
 
 	@Test
