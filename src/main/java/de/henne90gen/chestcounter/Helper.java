@@ -2,6 +2,8 @@ package de.henne90gen.chestcounter;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
+import net.minecraft.inventory.container.Container;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
@@ -10,26 +12,20 @@ import net.minecraft.world.IWorld;
 import net.minecraft.world.dimension.DimensionType;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Helper {
 
-	public static Helper instance = new Helper();
+	private static final int INVENTORY_SIZE = 36;
 
-	private Helper() {
-
-	}
-
-	public void runInThread(Runnable runnable) {
+	public static void runInThread(Runnable runnable) {
 		Thread thread = new Thread(runnable);
 		thread.setDaemon(true);
 		thread.start();
 	}
 
-	public String getChestId(List<BlockPos> positions) {
+	public static String getChestId(List<BlockPos> positions) {
 		// copy and sort incoming list
 		positions = new ArrayList<>(positions);
 		positions.sort(getBlockPosComparator());
@@ -40,7 +36,7 @@ public class Helper {
 		return String.join(":", positionStrings);
 	}
 
-	public BlockPos getBlockPosFromChestID(String chestId) {
+	public static BlockPos getBlockPosFromChestID(String chestId) {
 		String[] parts = chestId.split(":");
 		if (parts.length == 0) {
 			return new BlockPos(0, 0, 0);
@@ -52,7 +48,7 @@ public class Helper {
 		return new BlockPos(x, y, z);
 	}
 
-	public Comparator<BlockPos> getBlockPosComparator() {
+	public static Comparator<BlockPos> getBlockPosComparator() {
 		return (block, other) -> {
 			if (block.getX() < other.getX()) {
 				return -1;
@@ -72,7 +68,7 @@ public class Helper {
 	}
 
 	@Nonnull
-	public String getWorldID() {
+	public static String getWorldID() {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) {
 			return "";
@@ -99,18 +95,14 @@ public class Helper {
 		return worldName + ":" + dimension;
 	}
 
-	public String createDefaultLabel(List<BlockPos> chestPositions) {
-		if (chestPositions.isEmpty()) {
+	public static String createDefaultLabel(String chestId) {
+		if (chestId == null || chestId.isEmpty()) {
 			return "";
 		}
-		BlockPos pos = chestPositions.get(0);
-		int x = pos.getX();
-		int y = pos.getY();
-		int z = pos.getZ();
-		return x + " " + y + " " + z;
+		return chestId.replace(",", " ");
 	}
 
-	public String getChestId(IWorld world, BlockPos position) {
+	public static String getChestId(IWorld world, BlockPos position) {
 		List<BlockPos> chestPositions = new ArrayList<>();
 		BlockPos[] positions = {
 				position,
@@ -126,5 +118,23 @@ public class Helper {
 			}
 		}
 		return getChestId(chestPositions);
+	}
+
+	public static Map<String, Integer> countItemsInContainer(Container currentContainer) {
+		Map<String, Integer> counter = new LinkedHashMap<>();
+		for (int i = 0; i < currentContainer.inventorySlots.size() - INVENTORY_SIZE; i++) {
+			ItemStack stack = currentContainer.inventorySlots.get(i).getStack();
+			String itemName = stack.getDisplayName().getString();
+			if ("Air".equals(itemName)) {
+				continue;
+			}
+			Integer currentCount = counter.get(itemName);
+			if (currentCount == null) {
+				currentCount = 0;
+			}
+			currentCount += stack.getCount();
+			counter.put(itemName, currentCount);
+		}
+		return counter;
 	}
 }

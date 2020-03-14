@@ -41,7 +41,7 @@ public class HelperTest {
     }
 
     private void canSortBlockPositions(int x2, int y2, int z2, boolean reverse) {
-        Comparator<BlockPos> blockPosComparator = Helper.instance.getBlockPosComparator();
+        Comparator<BlockPos> blockPosComparator = Helper.getBlockPosComparator();
         BlockPos blockPos1 = new BlockPos(1, 2, 3);
         BlockPos blockPos2 = new BlockPos(x2, y2, z2);
         List<BlockPos> blockPos = new ArrayList<>();
@@ -67,13 +67,13 @@ public class HelperTest {
         blockPos.add(blockPos2);
         blockPos.add(blockPos1);
 
-        String chestID = Helper.instance.getChestId(blockPos);
+        String chestID = Helper.getChestId(blockPos);
         assertEquals("1,2,3:2,2,3", chestID);
     }
 
     @Test
     public void createsChestIDForSingleChestCorrectly() {
-        String chestID = Helper.instance.getChestId(
+        String chestID = Helper.getChestId(
                 Collections.singletonList(new BlockPos(1, 2, 3))
         );
         assertEquals("1,2,3", chestID);
@@ -81,7 +81,7 @@ public class HelperTest {
 
     @Test
     public void canConvertSingleChestIDToBlockPosCorrectly() {
-        BlockPos pos = Helper.instance.getBlockPosFromChestID("10,20,30");
+        BlockPos pos = Helper.getBlockPosFromChestID("10,20,30");
         assertEquals(10, pos.getX());
         assertEquals(20, pos.getY());
         assertEquals(30, pos.getZ());
@@ -89,7 +89,7 @@ public class HelperTest {
 
     @Test
     public void canConvertDoubleChestIDToBlockPosCorrectly() {
-        BlockPos pos = Helper.instance.getBlockPosFromChestID("10,20,30:40,50,60");
+        BlockPos pos = Helper.getBlockPosFromChestID("10,20,30:40,50,60");
         assertEquals(10, pos.getX());
         assertEquals(20, pos.getY());
         assertEquals(30, pos.getZ());

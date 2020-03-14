@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class Chest {
-	public String worldID;
+	public String worldId;
 	public String id;
 	public String label;
 	public Map<String, Integer> items = new LinkedHashMap<>();

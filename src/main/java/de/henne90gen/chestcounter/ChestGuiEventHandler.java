@@ -8,7 +8,6 @@ import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.screen.inventory.InventoryScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -20,220 +19,203 @@ import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestGuiEventHandler {
 
-	private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-	private static final int INVENTORY_SIZE = 36;
+    private final ChestCounter mod;
 
-	private static final int MARGIN = 5;
+    private Chest currentChest = null;
 
-	private final ChestCounter mod;
+    private TextFieldWidget searchField = null;
+    private ChestSearchResult lastSearchResult = null;
 
-	private Chest currentChest = null;
+    private TextFieldWidget labelField = null;
 
-	private TextFieldWidget searchField = null;
-	private ChestSearchResult lastSearchResult = null;
+    public ChestGuiEventHandler(ChestCounter mod) {
+        this.mod = mod;
+    }
 
-	private TextFieldWidget labelField = null;
+    @SubscribeEvent
+    public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
 
-	public ChestGuiEventHandler(ChestCounter mod) {
-		this.mod = mod;
-	}
+        LOGGER.debug("Opened container screen");
 
-	@SubscribeEvent
-	public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
-		if (event.getGui() instanceof ContainerScreen) {
-			LOGGER.info("Opened inventory (" + event.getGui().getClass() + ")");
+        ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
+        int guiLeft = screen.getGuiLeft();
+        int guiTop = screen.getGuiTop();
+        int xSize = screen.getXSize();
 
-			int guiLeft = ((ContainerScreen) event.getGui()).getGuiLeft();
-			int guiTop = ((ContainerScreen) event.getGui()).getGuiTop();
-			int xSize = ((ContainerScreen) event.getGui()).getXSize();
+        int x = guiLeft + xSize + Renderer.MARGIN;
+        searchField = new TextFieldWidget(
+                Minecraft.getInstance().fontRenderer,
+                x, guiTop,
+                100, 15,
+                "Search"
+        );
+        event.addWidget(searchField);
 
-			int x = guiLeft + xSize + MARGIN;
-			searchField = new TextFieldWidget(
-					Minecraft.getInstance().fontRenderer,
-					x, guiTop,
-					100, 15,
-					"Search"
-			);
-			event.addWidget(searchField);
+        if (event.getGui() instanceof ChestScreen) {
+            ChestScreen chestScreen = (ChestScreen) event.getGui();
+            int width = 128;
+            int numRows = chestScreen.getContainer().getNumRows();
+            int offsetLeft = 40;
+            if (numRows == 6) {
+                // large chest
+                offsetLeft = 75;
+                width = 93;
+            }
+            int offsetTop = 5;
+            labelField = new TextFieldWidget(
+                    Minecraft.getInstance().fontRenderer,
+                    guiLeft + offsetLeft, guiTop + offsetTop,
+                    width, 10,
+                    "Chest Label"
+            );
+            if (currentChest != null && currentChest.label != null) {
+                labelField.setText(currentChest.label);
+            }
+            event.addWidget(labelField);
+        }
 
-			if (event.getGui() instanceof ChestScreen) {
-				ChestScreen chestScreen = (ChestScreen) event.getGui();
-				int width = 128;
-				int numRows = chestScreen.getContainer().getNumRows();
-				int offsetLeft = 40;
-				if (numRows == 6) {
-					// large chest
-					offsetLeft = 75;
-					width = 93;
-				}
-				int offsetTop = 5;
-				labelField = new TextFieldWidget(
-						Minecraft.getInstance().fontRenderer,
-						guiLeft + offsetLeft, guiTop + offsetTop,
-						width, 10,
-						"Chest Label"
-				);
-				if (currentChest != null) {
-					labelField.setText(currentChest.label);
-				}
-				event.addWidget(labelField);
-			}
+        search();
 
-			search();
-		}
-	}
+    }
 
-	@SubscribeEvent
-	public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
-		if (event.getGui() instanceof ContainerScreen) {
-			keyPressedOnTextField(event, searchField);
-			if (event.isCanceled()) {
-				search();
-				return;
-			}
+    @SubscribeEvent
+    public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
 
-			if (event.getGui() instanceof ChestScreen) {
-				keyPressedOnTextField(event, labelField);
-				if (event.isCanceled()) {
-					if (currentChest != null) {
-						mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
-					}
-					search();
-				}
-			}
-		}
-	}
+        LOGGER.debug("Pressed key in container screen");
 
-	private void search() {
-		if (searchField == null) {
-			return;
-		}
-		lastSearchResult = mod.chestService.getItemCounts(Helper.instance.getWorldID(), searchField.getText());
-	}
+        keyPressedOnTextField(event, searchField);
+        if (event.isCanceled()) {
+            search();
+            return;
+        }
 
-	private void keyPressedOnTextField(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event, TextFieldWidget textField) {
-		event.setCanceled(textField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
-		boolean disallowedKeyPressed = event.getKeyCode() == 69/*e*/ || event.getKeyCode() == 76/*l*/;
-		if (disallowedKeyPressed && textField.isFocused()) {
-			event.setCanceled(true);
-		}
-	}
+        if (event.getGui() instanceof ChestScreen) {
+            keyPressedOnTextField(event, labelField);
+            if (event.isCanceled()) {
+                if (currentChest != null) {
+                    mod.chestService.updateLabel(currentChest.worldId, currentChest.id, labelField.getText());
+                }
+                search();
+            }
+        }
+    }
 
-	@SubscribeEvent
-	public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
-		if (event.getGui() instanceof ContainerScreen) {
-			if (event.getGui() instanceof InventoryScreen) {
-				// chest does it automatically somehow
-				event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
-			}
+    private void search() {
+        if (searchField == null) {
+            return;
+        }
+        lastSearchResult = mod.chestService.getItemCounts(Helper.getWorldID(), searchField.getText());
+    }
 
-			if (event.getGui() instanceof ChestScreen && currentChest != null) {
-				mod.chestService.updateLabel(currentChest.worldID, currentChest.id, labelField.getText());
-			}
-			search();
-		}
-	}
+    private void keyPressedOnTextField(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event, TextFieldWidget textField) {
+        event.setCanceled(textField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
+        boolean disallowedKeyPressed = event.getKeyCode() == 69/*e*/ || event.getKeyCode() == 76/*l*/;
+        if (disallowedKeyPressed && textField.isFocused()) {
+            event.setCanceled(true);
+        }
+    }
 
-	@SubscribeEvent
-	public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Pre event) {
-		if (event.getGui() instanceof ContainerScreen) {
-			searchField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
-			if (labelField != null) {
-				labelField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
-			}
-		}
-	}
+    @SubscribeEvent
+    public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
 
-	@SubscribeEvent
-	public void mouseReleasedPre(GuiScreenEvent.MouseReleasedEvent.Pre event) {
-		if (event.getGui() instanceof ContainerScreen) {
-			searchField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton());
-			if (labelField != null) {
-				labelField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton());
-			}
+        LOGGER.debug("Typed char in container screen");
+        if (event.getGui() instanceof InventoryScreen) {
+            // chest does it automatically somehow
+            // TODO this is buggy in chests (the last typed character is not picked up by the search)
+            //  and if we do this in the chest screen as well, then it will display each typed character twice.
+            event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
+        }
 
-			// this only works for picking up items, not for dropping them back into the inventory
-			saveCurrentChest(event);
-			search();
-		}
-	}
+        if (event.getGui() instanceof ChestScreen && currentChest != null) {
+            event.setCanceled(labelField.charTyped(event.getCodePoint(), event.getModifiers()));
+            mod.chestService.updateLabel(currentChest.worldId, currentChest.id, labelField.getText());
+        }
+        search();
+    }
 
-	private void saveCurrentChest(GuiScreenEvent event) {
-		if (currentChest == null) {
-			return;
-		}
-		if (event.getGui() instanceof ChestScreen) {
-			Container currentContainer = ((ChestScreen) event.getGui()).getContainer();
-			currentChest.items = countItems(currentContainer);
-			mod.chestService.save(currentChest);
-		}
-	}
+    @SubscribeEvent
+    public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Pre event) {
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
 
-	private Map<String, Integer> countItems(Container currentContainer) {
-		Map<String, Integer> counter = new LinkedHashMap<>();
-		for (int i = 0; i < currentContainer.inventorySlots.size() - INVENTORY_SIZE; i++) {
-			ItemStack stack = currentContainer.inventorySlots.get(i).getStack();
-			String itemName = stack.getDisplayName().getString();
-			if ("Air".equals(itemName)) {
-				continue;
-			}
-			Integer currentCount = counter.get(itemName);
-			if (currentCount == null) {
-				currentCount = 0;
-			}
-			currentCount += stack.getCount();
-			counter.put(itemName, currentCount);
-		}
-		return counter;
-	}
+        LOGGER.debug("Clicked mouse in container screen");
+        searchField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
+        if (labelField != null) {
+            labelField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
+        }
+    }
 
-	@SubscribeEvent
-	public void renderSearchResult(GuiScreenEvent.DrawScreenEvent.Post event) {
-		if (lastSearchResult == null) {
-			return;
-		}
+    @SubscribeEvent
+    public void mouseReleasedPre(GuiScreenEvent.MouseReleasedEvent.Pre event) {
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
 
-		if (!(event.getGui() instanceof ContainerScreen)) {
-			return;
-		}
+        searchField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton());
+        if (labelField != null) {
+            labelField.mouseReleased(event.getMouseX(), event.getMouseY(), event.getButton());
+        }
 
-		int guiLeft = ((ContainerScreen) event.getGui()).getGuiLeft();
-		int guiTop = ((ContainerScreen) event.getGui()).getGuiTop();
-		int xSize = ((ContainerScreen) event.getGui()).getXSize();
+        // this only works for picking up items, not for dropping them back into the inventory
+        saveCurrentChest(event);
+        search();
+    }
 
-		int RESULT_MARGIN = 25;
-		int currentY = guiTop + RESULT_MARGIN;
-		for (Map.Entry<String, Map<String, Integer>> entry : lastSearchResult.entrySet()) {
-			Minecraft.getInstance().fontRenderer.drawString(entry.getKey(), guiLeft + xSize + MARGIN, currentY, 0xffffff);
-			currentY += MARGIN * 2;
-			Map<String, Integer> value = entry.getValue();
-			for (Map.Entry<String, Integer> amountEntry : value.entrySet()) {
-				String amountString = amountEntry.getKey() + ": " + amountEntry.getValue();
-				int xOffset = MARGIN * 2;
-				Minecraft.getInstance().fontRenderer.drawString(amountString, guiLeft + xSize + MARGIN + xOffset, currentY, 0xffffff);
-				currentY += MARGIN * 2;
-			}
-			currentY += MARGIN;
-		}
-	}
+    private void saveCurrentChest(GuiScreenEvent event) {
+        if (currentChest == null) {
+            return;
+        }
+        if (event.getGui() instanceof ChestScreen) {
+            Container currentContainer = ((ChestScreen) event.getGui()).getContainer();
+            currentChest.items = Helper.countItemsInContainer(currentContainer);
+            mod.chestService.save(currentChest);
+        }
+    }
 
-	@SubscribeEvent
-	public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
-		BlockPos pos = event.getPos();
-		World world = event.getWorld();
-		TileEntity tileEntity = world.getTileEntity(pos);
-		if (tileEntity instanceof ChestTileEntity) {
-			String worldId = Helper.instance.getWorldID();
-			String chestId = Helper.instance.getChestId(world, pos);
-			currentChest = mod.chestService.getChest(worldId, chestId);
-		}
-	}
+    @SubscribeEvent
+    public void renderSearchResult(GuiScreenEvent.DrawScreenEvent.Post event) {
+        if (lastSearchResult == null) {
+            return;
+        }
+
+        if (!(event.getGui() instanceof ContainerScreen)) {
+            return;
+        }
+
+        ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
+        Renderer.renderSearchResult(lastSearchResult, screen);
+    }
+
+    @SubscribeEvent
+    public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
+        LOGGER.debug("Right clicked block");
+
+        BlockPos pos = event.getPos();
+        World world = event.getWorld();
+        TileEntity tileEntity = world.getTileEntity(pos);
+        if (!(tileEntity instanceof ChestTileEntity)) {
+            LOGGER.debug("Block was not a chest");
+            return;
+        }
+
+        String worldId = Helper.getWorldID();
+        String chestId = Helper.getChestId(world, pos);
+        currentChest = mod.chestService.getChest(worldId, chestId);
+        LOGGER.debug("Setting current chest to: " + currentChest.label + "(" + currentChest.id + ")");
+    }
 }

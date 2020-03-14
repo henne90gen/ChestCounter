@@ -20,36 +20,6 @@ import static org.junit.Assert.*;
 public class ChestServiceTest {
 
 	@Test
-	public void getLabelItemCount() {
-		InMemoryChestDB db = new InMemoryChestDB();
-		ChestService chestService = new ChestService(db);
-
-		String worldID = "TestWorld:0";
-
-		String testLabel = "test";
-		Chest chest1 = new Chest();
-		chest1.id = "1,2,3";
-		chest1.worldID = worldID;
-		chest1.label = testLabel;
-		chest1.items.put("Glass", 1);
-		chestService.save(chest1);
-
-		Chest chest2 = new Chest();
-		chest2.id = "4,5,6";
-		chest2.worldID = worldID;
-		chest2.label = "another";
-		chest2.items.put("Glass", 2);
-		chest2.items.put("Sand", 3);
-		chestService.save(chest2);
-
-		Map<String, Integer> itemCounts = chestService.getItemCountsForLabel(worldID, testLabel);
-		assertNotNull(itemCounts);
-		assertEquals(1, itemCounts.size());
-		assertTrue(itemCounts.containsKey("Glass"));
-		assertEquals(new Integer(1), itemCounts.get("Glass"));
-	}
-
-	@Test
 	public void updateLabelNoData() {
 		InMemoryChestDB db = new InMemoryChestDB();
 		ChestService chestService = new ChestService(db);
@@ -86,7 +56,7 @@ public class ChestServiceTest {
 
 		Chest saveChest = new Chest();
 		saveChest.id = chestID;
-		saveChest.worldID = worldID;
+		saveChest.worldId = worldID;
 		saveChest.items.put("Glass", 5);
 		chestService.save(saveChest);
 
@@ -94,7 +64,7 @@ public class ChestServiceTest {
 		assertNotNull(chests);
 		assertEquals(1, chests.size());
 		Chest resultChest = chests.get(0);
-		assertEquals(worldID, resultChest.worldID);
+		assertEquals(worldID, resultChest.worldId);
 		assertEquals(chestID, resultChest.id);
 		assertEquals(newChestLabel, resultChest.label);
 		assertEquals(1, resultChest.items.size());
@@ -122,7 +92,7 @@ public class ChestServiceTest {
 		assertNotNull(chests);
 		assertEquals(1, chests.size());
 		Chest resultChest = chests.get(0);
-		assertEquals(worldID, resultChest.worldID);
+		assertEquals(worldID, resultChest.worldId);
 		assertEquals(chestID, resultChest.id);
 		assertEquals(newChestLabel, resultChest.label);
 		assertEquals(1, resultChest.items.size());
@@ -162,7 +132,7 @@ public class ChestServiceTest {
 
 		Chest chest = new Chest();
 		chest.id = chestID;
-		chest.worldID = worldID;
+		chest.worldId = worldID;
 		String itemName = "Glass";
 		int itemAmount = 5;
 		chest.items.put(itemName, itemAmount);
@@ -173,7 +143,7 @@ public class ChestServiceTest {
 		assertNotNull(chests);
 		assertEquals(1, chests.size());
 		Chest resultChest = chests.get(0);
-		assertEquals(worldID, resultChest.worldID);
+		assertEquals(worldID, resultChest.worldId);
 		assertEquals(chestID, resultChest.id);
 		Map<String, Integer> items = chests.get(0).items;
 		assertNotNull(items);
@@ -193,7 +163,7 @@ public class ChestServiceTest {
 		String chestLabel = "TestLabel";
 		Chest chest = new Chest();
 		chest.id = "1,2,3";
-		chest.worldID = worldID;
+		chest.worldId = worldID;
 		chest.label = chestLabel;
 		chest.items.put(itemName, itemAmount);
 
@@ -220,7 +190,7 @@ public class ChestServiceTest {
 
 		Chest chest = new Chest();
 		chest.id = chestID;
-		chest.worldID = worldID;
+		chest.worldId = worldID;
 		chest.items.put("Glass", 5);
 		chest.items.put("Sand", 32);
 		chestService.save(chest);
@@ -244,16 +214,30 @@ public class ChestServiceTest {
 
 		Chest chest = new Chest();
 		chest.id = chestID;
-		chest.worldID = worldID;
+		chest.worldId = worldID;
 		chest.items.put("Glass", 5);
 		chestService.save(chest);
 
 		Chest chestResult = chestService.getChest(worldID, chestID);
 		assertNotNull(chestResult);
-		assertEquals(worldID, chestResult.worldID);
+		assertEquals(worldID, chestResult.worldId);
 		assertEquals(chestID, chestResult.id);
 		assertEquals(chestID, chestResult.label);
 		assertEquals(1, chestResult.items.size());
+	}
+
+	@Test
+	public void getChestDoesNotReturnNull() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
+
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3";
+
+		Chest chest = chestService.getChest(worldID, chestID);
+		assertNotNull(chest);
+		assertEquals(worldID, chest.worldId);
+		assertEquals(chestID, chest.id);
 	}
 
 	private void writeDataToDB(ChestDB db, String worldID, String chestID, String chestLabel, String itemName, int itemAmount) {

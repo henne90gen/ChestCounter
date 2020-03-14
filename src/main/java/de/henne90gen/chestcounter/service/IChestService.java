@@ -9,27 +9,35 @@ import java.util.List;
 import java.util.Map;
 
 public interface IChestService {
-	void save(Chest chest);
+    void save(Chest chest);
 
-	void delete(String worldId, String chestId);
+    void delete(String worldId, String chestId);
 
-	void updateLabel(String worldId, String chestId, String label);
+    void updateLabel(String worldId, String chestId, String label);
 
-	Map<String, Integer> getItemCountsForLabel(@Nonnull String worldID, @Nonnull String label)
-			throws IOException;
+    /**
+     * Retrieves a specific chest by its chest id.
+     *
+     * @param worldID
+     * @param chestId
+     * @return
+     */
+    Chest getChest(String worldID, String chestId);
 
-	Map<String, List<String>> getAllLabels(String worldID);
+    /**
+     * TODO sort this by chest label and then by item name (different interface is necessary)
+     *
+     * @param worldID
+     * @param queryString
+     * @return
+     */
+    ChestSearchResult getItemCounts(String worldID, String queryString);
 
-	Chest getChest(String worldID, String chestId);
-
-	/**
-	 * TODO sort this by chest label and then by item name (different interface is necessary)
-	 *
-	 * @param worldID
-	 * @param queryString
-	 * @return
-	 */
-	ChestSearchResult getItemCounts(String worldID, String queryString);
-
-	List<Chest> getChests(String worldID);
+    /**
+     * Retrieves all the chests for a world.
+     *
+     * @param worldID
+     * @return
+     */
+    List<Chest> getChests(String worldID);
 }

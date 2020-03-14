@@ -2,6 +2,7 @@ package de.henne90gen.chestcounter.db;
 
 import de.henne90gen.chestcounter.db.entities.Chests;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,6 +16,7 @@ public class CacheChestDB implements ChestDB {
 		this.delegate = delegate;
 	}
 
+	@Nonnull
 	@Override
 	public Chests loadChests(String worldID) {
 		if (!cachedChests.containsKey(worldID)) {

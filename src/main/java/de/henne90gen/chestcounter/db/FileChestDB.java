@@ -7,6 +7,7 @@ import de.henne90gen.chestcounter.db.entities.Chests;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -24,11 +25,16 @@ public class FileChestDB implements ChestDB {
 		this.filename = filename;
 	}
 
-	@Override
+	@Nonnull
+    @Override
 	public Chests loadChests(String worldID) {
 		ChestWorlds worlds = readChestWorlds();
 		if (worlds == null) {
 			return new Chests();
+		}
+		if (!worlds.containsKey(worldID)) {
+			worlds.put(worldID, new Chests());
+			writeChestWorlds(worlds);
 		}
 		return worlds.get(worldID);
 	}
