@@ -130,10 +130,8 @@ public class ChestService implements IChestService {
     @Override
     public ChestSearchResult getItemCounts(String worldID, String queryString) {
         ChestSearchResult result = new ChestSearchResult();
+        result.search = queryString;
         Chests chests = db.loadChests(worldID);
-        if (chests == null) {
-            return result;
-        }
 
         for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
             for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
@@ -144,18 +142,22 @@ public class ChestService implements IChestService {
                     } else {
                         label = chestEntry.getValue().label;
                     }
-
-                    Map<String, Integer> amountMap = result.getOrDefault(label, new LinkedHashMap<>());
-                    Integer amount = amountMap.getOrDefault(itemEntry.getKey(), 0);
-
-                    amount += itemEntry.getValue();
-
-                    amountMap.put(itemEntry.getKey(), amount);
-                    result.put(label, amountMap);
+                    updateResultMap(result.byLabel, itemEntry, label);
+                    updateResultMap(result.byId, itemEntry, chestEntry.getKey());
                 }
             }
         }
         return result;
+    }
+
+    private void updateResultMap(Map<String, Map<String, Integer>> result, Map.Entry<String, Integer> itemEntry, String key) {
+        Map<String, Integer> amountMap = result.getOrDefault(key, new LinkedHashMap<>());
+        Integer amount = amountMap.getOrDefault(itemEntry.getKey(), 0);
+
+        amount += itemEntry.getValue();
+
+        amountMap.put(itemEntry.getKey(), amount);
+        result.put(key, amountMap);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package de.henne90gen.chestcounter;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 import net.minecraft.client.Minecraft;
@@ -13,11 +14,14 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestGuiEventHandler {
@@ -43,8 +47,6 @@ public class ChestGuiEventHandler {
             return;
         }
 
-        LOGGER.debug("Opened container screen");
-
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
         int guiLeft = screen.getGuiLeft();
         int guiTop = screen.getGuiTop();
@@ -53,8 +55,8 @@ public class ChestGuiEventHandler {
         int x = guiLeft + xSize + Renderer.MARGIN;
         searchField = new TextFieldWidget(
                 Minecraft.getInstance().fontRenderer,
-                x, guiTop,
-                100, 15,
+                x, 2,
+                100, 10,
                 "Search"
         );
         event.addWidget(searchField);
@@ -91,8 +93,6 @@ public class ChestGuiEventHandler {
         if (!(event.getGui() instanceof ContainerScreen)) {
             return;
         }
-
-        LOGGER.debug("Pressed key in container screen");
 
         keyPressedOnTextField(event, searchField);
         if (event.isCanceled()) {
@@ -132,19 +132,27 @@ public class ChestGuiEventHandler {
             return;
         }
 
-        LOGGER.debug("Typed char in container screen");
-        if (event.getGui() instanceof InventoryScreen) {
-            // chest does it automatically somehow
-            // TODO this is buggy in chests (the last typed character is not picked up by the search)
-            //  and if we do this in the chest screen as well, then it will display each typed character twice.
-            event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
-        }
-
         if (event.getGui() instanceof ChestScreen && currentChest != null) {
             event.setCanceled(labelField.charTyped(event.getCodePoint(), event.getModifiers()));
             mod.chestService.updateLabel(currentChest.worldId, currentChest.id, labelField.getText());
+            if (event.isCanceled()) {
+                String text = labelField.getText();
+                labelField.setText(text.substring(0, text.length() - 1));
+            }
         }
+
+        event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
+
         search();
+
+        if (event.getGui() instanceof ChestScreen && event.isCanceled()) {
+            // the chest screen also sends the event to the searchField.
+            // Undoing one of those events here.
+            String text = searchField.getText();
+            if (text.length() > 0) {
+                searchField.setText(text.substring(0, text.length() - 1));
+            }
+        }
     }
 
     @SubscribeEvent
@@ -203,13 +211,10 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
-        LOGGER.debug("Right clicked block");
-
         BlockPos pos = event.getPos();
         World world = event.getWorld();
         TileEntity tileEntity = world.getTileEntity(pos);
         if (!(tileEntity instanceof ChestTileEntity)) {
-            LOGGER.debug("Block was not a chest");
             return;
         }
 
@@ -217,5 +222,19 @@ public class ChestGuiEventHandler {
         String chestId = Helper.getChestId(world, pos);
         currentChest = mod.chestService.getChest(worldId, chestId);
         LOGGER.debug("Setting current chest to: " + currentChest.label + "(" + currentChest.id + ")");
+    }
+
+    @SubscribeEvent
+    public void render(RenderWorldLastEvent event) {
+        List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
+
+        if (chests == null) {
+            return;
+        }
+
+        float maxDistance = 10.0F;
+        float partialTickTime = event.getPartialTicks();
+        MatrixStack matrixStack = event.getMatrixStack();
+        Renderer.renderChestLabels(chests, lastSearchResult, maxDistance, partialTickTime, matrixStack);
     }
 }

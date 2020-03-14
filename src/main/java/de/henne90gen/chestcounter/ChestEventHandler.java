@@ -86,21 +86,4 @@ public class ChestEventHandler {
             Helper.runInThread(() -> mod.chestService.save(chest));
         }
     }
-
-    @SubscribeEvent
-    public void render(RenderWorldLastEvent event) {
-        List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
-
-        if (chests == null) {
-            return;
-        }
-
-//        LOGGER.debug("Rendering " + chests.size() + " chest labels.");
-
-        int color = 0xFFFFFF;
-        float maxDistance = 10.0F;
-        float partialTickTime = event.getPartialTicks();
-        MatrixStack matrixStack = event.getMatrixStack();
-        Renderer.renderChestLabels(chests, color, maxDistance, partialTickTime, matrixStack);
-    }
 }

@@ -6,6 +6,7 @@ import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.db.entities.Chests;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;

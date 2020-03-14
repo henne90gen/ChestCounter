@@ -181,27 +181,102 @@ public class ChestServiceTest {
 	}
 
 	@Test
-	public void getItemCountsWorks() {
+	public void getItemCountsWorksByLabel() {
 		InMemoryChestDB db = new InMemoryChestDB();
 		ChestService chestService = new ChestService(db);
 
-		String chestID = "1,2,3";
 		String worldID = "TestWorld:0";
 
 		Chest chest = new Chest();
-		chest.id = chestID;
+		chest.id = "1,2,3";
 		chest.worldId = worldID;
+		chest.label = "TestChest";
 		chest.items.put("Glass", 5);
 		chest.items.put("Sand", 32);
 		chestService.save(chest);
 
+		chest = new Chest();
+		chest.id = "1,2,4";
+		chest.worldId = worldID;
+		chest.label = "TestChest";
+		chest.items.put("Sand", 32);
+		chestService.save(chest);
+
+		chest = new Chest();
+		chest.id = "1,2,6";
+		chest.worldId = worldID;
+		chest.label = "AnotherChest";
+		chest.items.put("Glass", 5);
+		chest.items.put("Sand", 25);
+		chest.items.put("Dirt", 10);
+		chestService.save(chest);
+
 		ChestSearchResult searchResult = chestService.getItemCounts(worldID, "sa");
 		assertNotNull(searchResult);
-		assertEquals(1, searchResult.size());
-		assertTrue(searchResult.containsKey(chestID));
-		Map<String, Integer> chestResult = searchResult.get(chestID);
+		Map<String, Map<String, Integer>> byLabel = searchResult.byLabel;
+		assertEquals(2, byLabel.size());
+
+		assertTrue(byLabel.containsKey("TestChest"));
+		Map<String, Integer> chestResult = byLabel.get("TestChest");
+		assertTrue(chestResult.containsKey("Sand"));
+		assertEquals(new Integer(64), chestResult.get("Sand"));
+
+		assertTrue(byLabel.containsKey("AnotherChest"));
+		chestResult = byLabel.get("AnotherChest");
+		assertTrue(chestResult.containsKey("Sand"));
+		assertEquals(new Integer(25), chestResult.get("Sand"));
+	}
+
+	@Test
+	public void getItemCountsWorksById() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
+
+		String worldID = "TestWorld:0";
+
+		Chest chest = new Chest();
+		chest.id = "1,2,3";
+		chest.worldId = worldID;
+		chest.label = "TestChest";
+		chest.items.put("Glass", 5);
+		chest.items.put("Sand", 32);
+		chestService.save(chest);
+
+		chest = new Chest();
+		chest.id = "1,2,4";
+		chest.worldId = worldID;
+		chest.label = "TestChest";
+		chest.items.put("Sand", 32);
+		chestService.save(chest);
+
+		chest = new Chest();
+		chest.id = "1,2,6";
+		chest.worldId = worldID;
+		chest.label = "AnotherChest";
+		chest.items.put("Glass", 5);
+		chest.items.put("Sand", 25);
+		chest.items.put("Dirt", 10);
+		chestService.save(chest);
+
+		ChestSearchResult searchResult = chestService.getItemCounts(worldID, "sa");
+		assertNotNull(searchResult);
+		Map<String, Map<String, Integer>> byId = searchResult.byId;
+		assertEquals(3, byId.size());
+
+		assertTrue(byId.containsKey("1,2,3"));
+		Map<String, Integer> chestResult = byId.get("1,2,3");
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(32), chestResult.get("Sand"));
+
+		assertTrue(byId.containsKey("1,2,4"));
+		chestResult = byId.get("1,2,4");
+		assertTrue(chestResult.containsKey("Sand"));
+		assertEquals(new Integer(32), chestResult.get("Sand"));
+
+		assertTrue(byId.containsKey("1,2,6"));
+		chestResult = byId.get("1,2,6");
+		assertTrue(chestResult.containsKey("Sand"));
+		assertEquals(new Integer(25), chestResult.get("Sand"));
 	}
 
 	@Test
