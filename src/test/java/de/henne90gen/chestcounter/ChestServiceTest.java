@@ -222,7 +222,7 @@ public class ChestServiceTest {
 		assertNotNull(chestResult);
 		assertEquals(worldID, chestResult.worldId);
 		assertEquals(chestID, chestResult.id);
-		assertEquals(chestID, chestResult.label);
+		assertNull(chestResult.label);
 		assertEquals(1, chestResult.items.size());
 	}
 
