@@ -71,6 +71,10 @@ public class Renderer {
             return;
         }
 
+        // moves text out of the chest (with a radius of 1 block)
+        dx -= (dx * 1.0F) / distance;
+        dz -= (dz * 1.0F) / distance;
+
         matrixStackIn.push();
 
         matrixStackIn.translate(dx, dy - 0.9F, dz);
