@@ -26,7 +26,7 @@ public class FileChestDB implements ChestDB {
 	}
 
 	@Nonnull
-    @Override
+	@Override
 	public Chests loadChests(String worldID) {
 		ChestWorlds worlds = readChestWorlds();
 		if (worlds == null) {
@@ -96,7 +96,7 @@ public class FileChestDB implements ChestDB {
 			return null;
 		}
 		if (storage.version != ChestStorage.CURRENT_VERSION) {
-			// TODO decide what to do with this
+			// TODO create schema migrations
 			return null;
 		}
 		return storage.worlds;
