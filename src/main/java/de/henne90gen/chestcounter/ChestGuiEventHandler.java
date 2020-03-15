@@ -14,8 +14,11 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.RenderBlockOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
@@ -155,7 +158,6 @@ public class ChestGuiEventHandler {
             return;
         }
 
-        LOGGER.debug("Clicked mouse in container screen");
         searchField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
         if (labelField != null) {
             labelField.mouseClicked(event.getMouseX(), event.getMouseY(), event.getButton());
@@ -205,6 +207,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
+        // TODO try out PlayerContainerEvent instead
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
+
         BlockPos pos = event.getPos();
         World world = event.getWorld();
         TileEntity tileEntity = world.getTileEntity(pos);

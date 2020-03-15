@@ -40,9 +40,11 @@ public class ChestEventHandler {
 
     @SubscribeEvent
     public void harvestBlock(BlockEvent.BreakEvent event) {
+        // TODO this event is not being fired on the client
         if (!event.getWorld().isRemote()) {
             return;
         }
+        LOGGER.info("BreakEvent: " + event.getClass());
 
         TileEntity tileEntity = event.getWorld().getTileEntity(event.getPos());
         if (tileEntity instanceof ChestTileEntity) {
@@ -72,7 +74,17 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
+    public void block(BlockEvent event) {
+        LOGGER.debug("BlockEvent both: " + event.getClass());
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
+        LOGGER.debug("BlockEvent client: " + event.getClass());
+    }
+
+    @SubscribeEvent
     public void place(BlockEvent.EntityPlaceEvent event) {
+        // TODO this event is not being fired on the client
         if (!event.getWorld().isRemote()) {
             return;
         }
