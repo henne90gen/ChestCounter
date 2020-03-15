@@ -27,14 +27,15 @@ public class Renderer {
                 continue;
             }
             BlockPos pos = Helper.getBlockPosFromChestID(chest.id);
+            boolean chestHasItemFromSearch = searchResult != null && searchResult.byId.containsKey(chest.id) && !searchResult.search.isEmpty();
 
             int color = 0xFFFFFF;
-            if (searchResult != null && searchResult.byId.containsKey(chest.id)) {
+            if (chestHasItemFromSearch) {
                 color = 0x00FF00;
             }
             renderText(text, pos.getX(), pos.getY(), pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 1.0F);
 
-            if (searchResult != null && searchResult.byId.containsKey(chest.id) && !searchResult.search.isEmpty()) {
+            if (chestHasItemFromSearch) {
                 color = 0xFFFFFF;
                 float offsetY = 0.29F;
                 int count = 0;
