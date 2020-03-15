@@ -59,6 +59,9 @@ public class ChestGuiEventHandler {
                 100, 10,
                 "Search"
         );
+        if (lastSearchResult != null && lastSearchResult.search != null) {
+            searchField.setText(lastSearchResult.search);
+        }
         event.addWidget(searchField);
 
         if (event.getGui() instanceof ChestScreen) {
@@ -144,15 +147,6 @@ public class ChestGuiEventHandler {
         event.setCanceled(searchField.charTyped(event.getCodePoint(), event.getModifiers()));
 
         search();
-
-        if (event.getGui() instanceof ChestScreen && event.isCanceled()) {
-            // the chest screen also sends the event to the searchField.
-            // Undoing one of those events here.
-            String text = searchField.getText();
-            if (text.length() > 0) {
-                searchField.setText(text.substring(0, text.length() - 1));
-            }
-        }
     }
 
     @SubscribeEvent
