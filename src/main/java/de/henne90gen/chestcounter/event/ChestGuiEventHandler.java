@@ -65,7 +65,6 @@ public class ChestGuiEventHandler {
 
 	private void addSearchToggleToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen) {
 		int guiLeft = screen.getGuiLeft();
-		int guiTop = screen.getGuiTop();
 		int xSize = screen.getXSize();
 
 		int x = guiLeft + xSize + Renderer.MARGIN;
@@ -253,7 +252,6 @@ public class ChestGuiEventHandler {
 
 	@SubscribeEvent
 	public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
-		// TODO try out PlayerContainerEvent instead
 		if (!event.getWorld().isRemote()) {
 			return;
 		}

@@ -137,4 +137,41 @@ public class Helper {
 		}
 		return counter;
 	}
+
+	public static List<BlockPos> getCubeAroundPosition(BlockPos pos) {
+		List<BlockPos> positions = new ArrayList<>();
+
+		positions.add(pos);
+
+		positions.add(pos.up());
+		positions.add(pos.down());
+		positions.add(pos.south());
+		positions.add(pos.north());
+		positions.add(pos.east());
+		positions.add(pos.west());
+		positions.add(pos.south().west());
+		positions.add(pos.south().east());
+		positions.add(pos.north().west());
+		positions.add(pos.north().east());
+
+		positions.add(pos.up().south());
+		positions.add(pos.up().north());
+		positions.add(pos.up().east());
+		positions.add(pos.up().west());
+		positions.add(pos.up().south().west());
+		positions.add(pos.up().south().east());
+		positions.add(pos.up().north().west());
+		positions.add(pos.up().north().east());
+
+		positions.add(pos.down().south());
+		positions.add(pos.down().north());
+		positions.add(pos.down().east());
+		positions.add(pos.down().west());
+		positions.add(pos.down().south().west());
+		positions.add(pos.down().south().east());
+		positions.add(pos.down().north().west());
+		positions.add(pos.down().north().east());
+
+		return positions;
+	}
 }
