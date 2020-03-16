@@ -12,15 +12,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestEventHandler {
 
-	private static final Logger LOGGER = LogManager.getLogger();
+	// TODO make this configurable
 	private static final int CHECK_FOR_CHESTS_EVERY_X_TICKS = 20;
 
 	private final ChestCounter mod;
