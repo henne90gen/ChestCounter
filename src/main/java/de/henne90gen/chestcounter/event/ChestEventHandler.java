@@ -5,11 +5,11 @@ import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
@@ -21,8 +21,10 @@ import java.util.List;
 public class ChestEventHandler {
 
 	private static final Logger LOGGER = LogManager.getLogger();
+	private static final int CHECK_FOR_CHESTS_EVERY_X_TICKS = 20;
 
 	private final ChestCounter mod;
+	private int tickCount = 0;
 
 	public ChestEventHandler(ChestCounter mod) {
 		this.mod = mod;
@@ -36,6 +38,11 @@ public class ChestEventHandler {
 			return;
 		}
 
+		tickCount++;
+		if (tickCount % CHECK_FOR_CHESTS_EVERY_X_TICKS != 0) {
+			return;
+		}
+
 		// TODO this might become a performance bottleneck
 		//  we might be able to do it faster by striping the list and only checking one stripe per tick
 		List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
@@ -45,6 +52,10 @@ public class ChestEventHandler {
 				TileEntity tileEntity = world.getTileEntity(pos);
 				if (tileEntity instanceof ChestTileEntity) {
 					// it would be nice to update the chests right here, but sadly we only get empty chests from the world
+					ChestTileEntity chestTileEntity = (ChestTileEntity) tileEntity;
+					for (int i = 0; i < chestTileEntity.getSizeInventory(); i++) {
+						ItemStack stack = chestTileEntity.getStackInSlot(i);
+					}
 					continue;
 				}
 
