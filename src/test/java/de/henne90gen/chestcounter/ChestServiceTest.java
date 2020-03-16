@@ -121,6 +121,31 @@ public class ChestServiceTest {
 	}
 
 	@Test
+	public void deleteSplitsDoubleChest() {
+		InMemoryChestDB db = new InMemoryChestDB();
+		ChestService chestService = new ChestService(db);
+
+		String worldID = "TestWorld:0";
+		String chestID = "1,2,3:1,2,4";
+		String chestLabel = "TestLabel";
+		String itemName = "Glass";
+		int itemAmount = 5;
+		writeDataToDB(db, worldID, chestID, chestLabel, itemName, itemAmount);
+
+		chestService.delete(worldID, "1,2,3");
+
+		List<Chest> chests = chestService.getChests(worldID);
+		assertNotNull(chests);
+		assertEquals(1, chests.size());
+
+		Chest chest = chests.get(0);
+		assertEquals(worldID, chest.worldId);
+		assertEquals("1,2,4", chest.id);
+		assertEquals("TestLabel", chest.label);
+		assertEquals(0, chest.items.size());
+	}
+
+	@Test
 	public void save() {
 		InMemoryChestDB db = new InMemoryChestDB();
 		ChestService chestService = new ChestService(db);

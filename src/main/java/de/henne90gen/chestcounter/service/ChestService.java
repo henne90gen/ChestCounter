@@ -73,11 +73,21 @@ public class ChestService implements IChestService {
 			// Create copy of keySet to prevent ConcurrentModificationException
 			HashSet<String> keys = new HashSet<>(chests.keySet());
 			for (String key : keys) {
-				if (key.contains(partialChestId)) {
-					chests.remove(key);
-					LOGGER.info("Deleted " + key);
-					// TODO split double chests
+				if (!key.contains(partialChestId)) {
+					continue;
 				}
+
+				ChestContent content = chests.remove(key);
+				LOGGER.info("Deleted " + key);
+
+				if (key.contains(":")) {
+					String otherHalfKey = key
+							.replace(partialChestId, "")
+							.replace(":", "");
+					content.items = new LinkedHashMap<>();
+					chests.put(otherHalfKey, content);
+				}
+				break;
 			}
 
 			db.saveChests(chests, worldId);

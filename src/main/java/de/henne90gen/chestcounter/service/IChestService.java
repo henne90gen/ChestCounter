@@ -15,6 +15,7 @@ public interface IChestService {
 
 	/**
 	 * Deletes the chest that has a chest id that contains the given partial chest id.
+	 * This also splits double chests, removing all items from it in the process.
 	 *
 	 * @param worldId
 	 * @param partialChestId
