@@ -17,7 +17,7 @@ public class Chest {
 		return id.contains(":");
 	}
 
-	public List<BlockPos> getBlockPos() {
+	public List<BlockPos> getBlockPositions() {
 		ArrayList<BlockPos> positions = new ArrayList<>();
 		String[] parts = id.split(":");
 		for (String part : parts) {

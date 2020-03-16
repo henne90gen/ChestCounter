@@ -222,14 +222,13 @@ public class ChestGuiEventHandler {
 	}
 
 	private void saveCurrentChest(GuiScreenEvent event) {
-		if (currentChest == null) {
+		if (currentChest == null || !(event.getGui() instanceof ChestScreen)) {
 			return;
 		}
-		if (event.getGui() instanceof ChestScreen) {
-			Container currentContainer = ((ChestScreen) event.getGui()).getContainer();
-			currentChest.items = Helper.countItemsInContainer(currentContainer);
-			mod.chestService.save(currentChest);
-		}
+
+		Container currentContainer = ((ChestScreen) event.getGui()).getContainer();
+		currentChest.items = Helper.countItems(Helper.inventoryIterator(currentContainer));
+		mod.chestService.save(currentChest);
 	}
 
 	@SubscribeEvent

@@ -76,6 +76,7 @@ public class ChestService implements IChestService {
 				if (key.contains(partialChestId)) {
 					chests.remove(key);
 					LOGGER.info("Deleted " + key);
+					// TODO split double chests
 				}
 			}
 

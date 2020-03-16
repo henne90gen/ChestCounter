@@ -120,10 +120,42 @@ public class Helper {
 		return getChestId(chestPositions);
 	}
 
-	public static Map<String, Integer> countItemsInContainer(Container currentContainer) {
+	public static Iterable<ItemStack> inventoryIterator(Container container) {
+		return () -> new Iterator<ItemStack>() {
+			int i = 0;
+
+			@Override
+			public boolean hasNext() {
+				return i < container.inventorySlots.size() - INVENTORY_SIZE;
+			}
+
+			@Override
+			public ItemStack next() {
+				return container.inventorySlots.get(i++).getStack();
+			}
+		};
+	}
+
+	public static Iterable<ItemStack> inventoryIterator(ChestTileEntity tileEntity) {
+		return () -> new Iterator<ItemStack>() {
+			int i = 0;
+			int inventorySize = tileEntity.getSizeInventory();
+
+			@Override
+			public boolean hasNext() {
+				return i < inventorySize;
+			}
+
+			@Override
+			public ItemStack next() {
+				return tileEntity.getStackInSlot(i++);
+			}
+		};
+	}
+
+	public static Map<String, Integer> countItems(Iterable<ItemStack> inventoryIterator) {
 		Map<String, Integer> counter = new LinkedHashMap<>();
-		for (int i = 0; i < currentContainer.inventorySlots.size() - INVENTORY_SIZE; i++) {
-			ItemStack stack = currentContainer.inventorySlots.get(i).getStack();
+		for (ItemStack stack : inventoryIterator) {
 			String itemName = stack.getDisplayName().getString();
 			if ("Air".equals(itemName)) {
 				continue;

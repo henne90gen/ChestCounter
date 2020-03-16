@@ -2,17 +2,19 @@ package de.henne90gen.chestcounter.event;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ChestBlock;
+import de.henne90gen.chestcounter.service.dtos.Chest;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.tileentity.ChestTileEntity;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collections;
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -27,27 +29,27 @@ public class ChestEventHandler {
 	}
 
 	@SubscribeEvent
-	public void player(PlayerInteractEvent.LeftClickBlock event) {
-		if (event.getPlayer() == null) {
+	public void tick(TickEvent.ClientTickEvent event) {
+		Minecraft mc = Minecraft.getInstance();
+		ClientWorld world = mc.world;
+		if (world == null || !world.isRemote()) {
 			return;
 		}
-		if (!event.getWorld().isRemote()) {
-			return;
-		}
 
-		String worldID = Helper.getWorldID();
+		// TODO this might become a performance bottleneck
+		//  we might be able to do it faster by striping the list and only checking one stripe per tick
+		List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
+		for (Chest chest : chests) {
+			List<BlockPos> positions = chest.getBlockPositions();
+			for (BlockPos pos : positions) {
+				TileEntity tileEntity = world.getTileEntity(pos);
+				if (tileEntity instanceof ChestTileEntity) {
+					// it would be nice to update the chests right here, but sadly we only get empty chests from the world
+					continue;
+				}
 
-		List<BlockPos> positions = Helper.getCubeAroundPosition(event.getPos());
-		for (BlockPos pos : positions) {
-			BlockState blockState = event.getPlayer().getEntityWorld().getBlockState(pos);
-			Block block = blockState.getBlock();
-
-			if (block instanceof ChestBlock) {
-				continue;
+				mod.chestService.delete(chest.worldId, chest.id);
 			}
-
-			String chestId = Helper.getChestId(Collections.singletonList(pos));
-			mod.chestService.delete(worldID, chestId);
 		}
 	}
 }
