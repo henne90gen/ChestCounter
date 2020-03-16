@@ -50,10 +50,6 @@ public class ChestEventHandler {
 				TileEntity tileEntity = world.getTileEntity(pos);
 				if (tileEntity instanceof ChestTileEntity) {
 					// it would be nice to update the chests right here, but sadly we only get empty chests from the world
-					ChestTileEntity chestTileEntity = (ChestTileEntity) tileEntity;
-					for (int i = 0; i < chestTileEntity.getSizeInventory(); i++) {
-						ItemStack stack = chestTileEntity.getStackInSlot(i);
-					}
 					continue;
 				}
 
