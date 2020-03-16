@@ -21,3 +21,4 @@ You can also give labels to your chests. This can be done by typing the label in
 ## TODOs
 
 - make it work in creative mode
+- render labels above double-chests correctly
