@@ -26,8 +26,10 @@ public class Renderer {
 			if (text == null || text.isEmpty()) {
 				continue;
 			}
-			BlockPos pos = Helper.getBlockPosFromChestID(chest.id);
+			List<BlockPos> positions = chest.getBlockPositions();
 			boolean chestHasItemFromSearch = searchResult != null && searchResult.byId.containsKey(chest.id) && !searchResult.search.isEmpty();
+
+			BlockPos pos = Helper.getClosestPositionToPlayer(positions, partialTickTime);
 
 			int color = 0xFFFFFF;
 			if (chestHasItemFromSearch) {

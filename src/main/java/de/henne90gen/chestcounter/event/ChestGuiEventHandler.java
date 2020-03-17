@@ -69,7 +69,7 @@ public class ChestGuiEventHandler {
 
 		int x = guiLeft + xSize + Renderer.MARGIN;
 		searchToggle = new ToggleWidget(
-				x - 15, 2,
+				x - 20, 2,
 				12, 15,
 				false
 		);

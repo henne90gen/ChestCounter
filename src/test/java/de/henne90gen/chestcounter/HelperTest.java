@@ -78,20 +78,4 @@ public class HelperTest {
         );
         assertEquals("1,2,3", chestID);
     }
-
-    @Test
-    public void canConvertSingleChestIDToBlockPosCorrectly() {
-        BlockPos pos = Helper.getBlockPosFromChestID("10,20,30");
-        assertEquals(10, pos.getX());
-        assertEquals(20, pos.getY());
-        assertEquals(30, pos.getZ());
-    }
-
-    @Test
-    public void canConvertDoubleChestIDToBlockPosCorrectly() {
-        BlockPos pos = Helper.getBlockPosFromChestID("10,20,30:40,50,60");
-        assertEquals(10, pos.getX());
-        assertEquals(20, pos.getY());
-        assertEquals(30, pos.getZ());
-    }
 }
