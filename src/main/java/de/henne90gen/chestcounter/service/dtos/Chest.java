@@ -18,10 +18,6 @@ public class Chest {
     public String label;
     public Map<String, Integer> items = new LinkedHashMap<>();
 
-    public boolean isDoubleChest() {
-        return id.contains(":");
-    }
-
     public List<BlockPos> getBlockPositions() {
         ArrayList<BlockPos> positions = new ArrayList<>();
         String[] parts = id.split(":");
