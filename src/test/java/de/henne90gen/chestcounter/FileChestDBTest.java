@@ -44,7 +44,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB.loadChests("NonExistentWorld:0");
@@ -66,7 +66,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB.loadChests(worldID);
@@ -113,7 +113,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB.deleteWorld(worldID);
@@ -137,7 +137,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB.deleteWorld("NonExistentWorld:0");
@@ -231,6 +231,28 @@ public class FileChestDBTest {
     }
 
     @Test
+    public void testMigrationsFromV2() throws IOException {
+        String filename = "./loads-chests-test.json";
+        FileChestDB chestDB = new FileChestDB(filename);
+
+        String chestLabel = "TestLabel";
+        String itemName = "Dirt";
+        int itemAmount = 5;
+        String chestID = "1,2,3";
+        String worldID = "TestWorld:0";
+
+        File chestCounter = new File(filename);
+        writeTestFileVersion2(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount, "RIGHT_OF_INVENTORY");
+
+        Chests chests = chestDB.loadChests(worldID);
+        assertEquals(1, chests.size());
+
+        ChestConfig chestConfig = chestDB.loadChestConfig();
+        assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
+        assertTrue(chestConfig.enabled);
+    }
+
+    @Test
     public void testLoadConfig() throws IOException {
         String filename = "./loads-chests-test.json";
         FileChestDB chestDB = new FileChestDB(filename);
@@ -242,13 +264,14 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount, "LEFT_OF_INVENTORY");
+        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount, "LEFT_OF_INVENTORY", false);
 
         Chests chests = chestDB.loadChests(worldID);
         assertEquals(1, chests.size());
 
         ChestConfig chestConfig = chestDB.loadChestConfig();
         assertEquals(SearchResultPlacement.LEFT_OF_INVENTORY, chestConfig.searchResultPlacement);
+        assertFalse(chestConfig.enabled);
     }
 
     @Test
@@ -277,17 +300,31 @@ public class FileChestDBTest {
         }
     }
 
-    public static void writeTestFileVersion(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
-            throws IOException {
-        writeTestFileVersion(file, worldID, chestID, chestLabel, itemName, itemAmount, "RIGHT_OF_INVENTORY");
-    }
-
-    public static void writeTestFileVersion(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount, String searchResultPlacement)
+    public static void writeTestFileVersion2(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount, String searchResultPlacement)
             throws IOException {
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("{" +
                     "\"version\": 2," +
                     "\"config\": {\"searchResultPlacement\": \"" + searchResultPlacement + "\"}," +
+                    "\"worlds\": {\""
+                    + worldID
+                    + "\":{\""
+                    + chestID
+                    + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}}");
+        }
+    }
+
+    public static void writeTestFile(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
+            throws IOException {
+        writeTestFile(file, worldID, chestID, chestLabel, itemName, itemAmount, "RIGHT_OF_INVENTORY", true);
+    }
+
+    public static void writeTestFile(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount, String searchResultPlacement, boolean enabled)
+            throws IOException {
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("{" +
+                    "\"version\": 2," +
+                    "\"config\": {\"searchResultPlacement\": \"" + searchResultPlacement + "\", \"enabled\": " + enabled + "}," +
                     "\"worlds\": {\""
                     + worldID
                     + "\":{\""

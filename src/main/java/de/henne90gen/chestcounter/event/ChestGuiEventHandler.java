@@ -52,13 +52,17 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
         LOGGER.debug("Screen opened: " + event.getGui().getClass());
 
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
-        ChestConfig config = mod.chestService.getConfig();
         boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
         addSearchFieldToScreen(event, screen, placeToTheRightOfInventory);
         addSearchToggleToScreen(event, screen, placeToTheRightOfInventory);
@@ -72,6 +76,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
@@ -95,6 +104,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void charTyped(GuiScreenEvent.KeyboardCharTypedEvent.Pre event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
@@ -115,6 +129,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void mouseClicked(GuiScreenEvent.MouseClickedEvent.Pre event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
@@ -132,6 +151,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void mouseReleased(GuiScreenEvent.MouseReleasedEvent.Pre event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
@@ -157,6 +181,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void renderSearchResult(GuiScreenEvent.DrawScreenEvent.Post event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
@@ -170,13 +199,17 @@ public class ChestGuiEventHandler {
             byId = !searchToggle.isStateTriggered();
         }
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
-        ChestConfig config = mod.chestService.getConfig();
         boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
         Renderer.renderSearchResult(screen, lastSearchResult, byId, placeToTheRightOfInventory);
     }
 
     @SubscribeEvent
     public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         if (!event.getWorld().isRemote()) {
             return;
         }
@@ -196,6 +229,11 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void render(RenderWorldLastEvent event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
 
         if (chests == null) {

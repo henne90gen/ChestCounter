@@ -170,10 +170,14 @@ public class FileChestDB implements ChestDB {
         if (version <= 1) {
             migrateToVersion2(json);
         }
-        // Template on how to add more migrations
-        // if (version <= 2) {
-        //     migrateToVersion3(version, json);
-        // }
+        if (version <= 2) {
+            migrateToVersion3(json);
+        }
+    }
+
+    private void bumpVersion(JsonObject json, int newVersion) {
+        json.remove("version");
+        json.addProperty("version", newVersion);
     }
 
     /**
@@ -181,10 +185,20 @@ public class FileChestDB implements ChestDB {
      * Adds the property searchResultPlacement to the config object
      */
     private void migrateToVersion2(JsonObject json) {
-        json.remove("version");
-        json.addProperty("version", 2);
+        bumpVersion(json, 2);
+
         JsonObject configJson = new JsonObject();
         configJson.addProperty("searchResultPlacement", "RIGHT_OF_INVENTORY");
         json.add("config", configJson);
+    }
+
+    /**
+     * Adds enabled flag to the config object
+     */
+    private void migrateToVersion3(JsonObject json) {
+        bumpVersion(json, 3);
+
+        JsonObject configJson = json.getAsJsonObject("config");
+        configJson.addProperty("enabled", true);
     }
 }

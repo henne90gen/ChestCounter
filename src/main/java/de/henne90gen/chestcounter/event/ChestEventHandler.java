@@ -2,6 +2,7 @@ package de.henne90gen.chestcounter.event;
 
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -30,6 +31,11 @@ public class ChestEventHandler {
 
     @SubscribeEvent
     public void tick(TickEvent.ClientTickEvent event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
         Minecraft mc = Minecraft.getInstance();
         ClientWorld world = mc.world;
         if (world == null || !world.isRemote()) {
