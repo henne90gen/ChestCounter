@@ -3,14 +3,15 @@ package de.henne90gen.chestcounter.event;
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.service.dtos.Chest;
+import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import java.util.Collections;
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -55,17 +56,18 @@ public class ChestEventHandler {
             List<BlockPos> positions = chest.getBlockPositions();
             for (BlockPos pos : positions) {
                 double distanceSq = pos.distanceSq(playerX, playerY, playerZ, true);
-				if (distanceSq > MAX_DISTANCE_SQ) {
+                if (distanceSq > MAX_DISTANCE_SQ) {
                     continue;
                 }
 
-                TileEntity tileEntity = world.getTileEntity(pos);
-                if (Helper.isContainerTileEntity(tileEntity)) {
+                Block block = world.getBlockState(pos).getBlock();
+                if (Helper.isContainerBlock(block)) {
                     // it would be nice to update the chests right here, but sadly we only get empty chests from the world
                     continue;
                 }
 
-                mod.chestService.delete(chest.worldId, chest.id);
+                String partialChestId = Helper.getChestId(Collections.singletonList(pos));
+                mod.chestService.delete(chest.worldId, partialChestId);
             }
         }
     }

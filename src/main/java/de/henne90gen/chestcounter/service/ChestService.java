@@ -80,7 +80,7 @@ public class ChestService implements IChestService {
 				ChestContent content = chests.remove(key);
 				LOGGER.info("Deleted " + key);
 
-				if (key.contains(":")) {
+				if (key.contains(":") && !partialChestId.contains(":")) {
 					String otherHalfKey = key
 							.replace(partialChestId, "")
 							.replace(":", "");

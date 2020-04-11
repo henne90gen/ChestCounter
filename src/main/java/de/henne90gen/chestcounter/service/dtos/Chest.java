@@ -33,7 +33,7 @@ public class Chest {
                 int z = Integer.parseInt(split[2]);
                 positions.add(new BlockPos(x, y, z));
             } catch (NumberFormatException e) {
-                LOGGER.warn("Could not create position for " + part + "(" + this + ")", e);
+                LOGGER.warn("Could not create position for " + part + "(" + this + ")");
             }
         }
         return positions;

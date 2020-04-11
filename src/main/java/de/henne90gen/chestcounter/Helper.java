@@ -1,13 +1,19 @@
 package de.henne90gen.chestcounter;
 
+import net.minecraft.block.BarrelBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.ChestBlock;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.state.properties.ChestType;
 import net.minecraft.tileentity.BarrelTileEntity;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.dimension.DimensionType;
@@ -90,17 +96,37 @@ public class Helper {
     }
 
     public static String getChestId(IWorld world, BlockPos position) {
+        BlockState blockState = world.getBlockState(position);
+        Block block = blockState.getBlock();
+        if (!(block instanceof ChestBlock)) {
+            // barrels, ...
+            return getChestId(Collections.singletonList(position));
+        }
+
+        ChestType chestType = blockState.get(ChestBlock.TYPE);
+        if (chestType == ChestType.SINGLE) {
+            return getChestId(Collections.singletonList(position));
+        }
+
         List<BlockPos> chestPositions = new ArrayList<>();
+        chestPositions.add(position);
+
         BlockPos[] positions = {
-                position,
                 position.north(),
                 position.east(),
                 position.south(),
                 position.west()
         };
+        Direction direction = blockState.get(ChestBlock.FACING);
         for (BlockPos pos : positions) {
-            TileEntity tileEntity = world.getTileEntity(pos);
-            if (isContainerTileEntity(tileEntity)) {
+            BlockState otherBlockState = world.getBlockState(pos);
+            if (!(otherBlockState.getBlock() instanceof ChestBlock)) {
+                continue;
+            }
+
+            ChestType otherChestType = otherBlockState.get(ChestBlock.TYPE);
+            Direction otherDirection = otherBlockState.get(ChestBlock.FACING);
+            if (direction == otherDirection && otherChestType == chestType.opposite()) {
                 chestPositions.add(pos);
             }
         }
@@ -109,6 +135,10 @@ public class Helper {
 
     public static boolean isContainerTileEntity(TileEntity tileEntity) {
         return tileEntity instanceof ChestTileEntity || tileEntity instanceof BarrelTileEntity;
+    }
+
+    public static boolean isContainerBlock(Block block) {
+        return block instanceof ChestBlock || block instanceof BarrelBlock;
     }
 
     public static Iterable<ItemStack> inventoryIterator(Container container) {
