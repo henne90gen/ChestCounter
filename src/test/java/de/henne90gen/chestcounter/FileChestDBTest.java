@@ -2,11 +2,12 @@ package de.henne90gen.chestcounter;
 
 import de.henne90gen.chestcounter.db.ChestDB;
 import de.henne90gen.chestcounter.db.FileChestDB;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.db.entities.Chests;
+import de.henne90gen.chestcounter.db.entities.SearchResultPlacement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -43,7 +44,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB.loadChests("NonExistentWorld:0");
@@ -65,7 +66,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             Chests result = chestDB.loadChests(worldID);
@@ -112,7 +113,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB.deleteWorld(worldID);
@@ -136,7 +137,7 @@ public class FileChestDBTest {
         String worldID = "TestWorld:0";
 
         File chestCounter = new File(filename);
-        writeTestFile(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
 
         try {
             chestDB.deleteWorld("NonExistentWorld:0");
@@ -208,17 +209,90 @@ public class FileChestDBTest {
         dbFile.deleteOnExit();
     }
 
-    public static void writeTestFile(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
-            throws IOException {
-        FileWriter writer = new FileWriter(file);
+    @Test
+    public void testMigrationsFromV1() throws IOException {
+        String filename = "./loads-chests-test.json";
+        FileChestDB chestDB = new FileChestDB(filename);
 
-        writer.write("{" +
-                "\"version\": 1," +
-                "\"worlds\": {\""
-                + worldID
-                + "\":{\""
-                + chestID
-                + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}}");
-        writer.close();
+        String chestLabel = "TestLabel";
+        String itemName = "Dirt";
+        int itemAmount = 5;
+        String chestID = "1,2,3";
+        String worldID = "TestWorld:0";
+
+        File chestCounter = new File(filename);
+        writeTestFileVersion1(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount);
+
+        Chests chests = chestDB.loadChests(worldID);
+        assertEquals(1, chests.size());
+
+        ChestConfig chestConfig = chestDB.loadChestConfig();
+        assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
+    }
+
+    @Test
+    public void testLoadConfig() throws IOException {
+        String filename = "./loads-chests-test.json";
+        FileChestDB chestDB = new FileChestDB(filename);
+
+        String chestLabel = "TestLabel";
+        String itemName = "Dirt";
+        int itemAmount = 5;
+        String chestID = "1,2,3";
+        String worldID = "TestWorld:0";
+
+        File chestCounter = new File(filename);
+        writeTestFileVersion(chestCounter, worldID, chestID, chestLabel, itemName, itemAmount, "LEFT_OF_INVENTORY");
+
+        Chests chests = chestDB.loadChests(worldID);
+        assertEquals(1, chests.size());
+
+        ChestConfig chestConfig = chestDB.loadChestConfig();
+        assertEquals(SearchResultPlacement.LEFT_OF_INVENTORY, chestConfig.searchResultPlacement);
+    }
+
+    @Test
+    public void testSaveConfig() {
+        String filename = "./loads-chests-test.json";
+        FileChestDB chestDB = new FileChestDB(filename);
+        ChestConfig config = new ChestConfig();
+        config.searchResultPlacement = SearchResultPlacement.RIGHT_OF_INVENTORY;
+        chestDB.saveChestConfig(config);
+
+        FileChestDB newChestDB = new FileChestDB(filename);
+        ChestConfig chestConfig = newChestDB.loadChestConfig();
+        assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
+    }
+
+    public static void writeTestFileVersion1(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
+            throws IOException {
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("{" +
+                    "\"version\": 1," +
+                    "\"worlds\": {\""
+                    + worldID
+                    + "\":{\""
+                    + chestID
+                    + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}}");
+        }
+    }
+
+    public static void writeTestFileVersion(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
+            throws IOException {
+        writeTestFileVersion(file, worldID, chestID, chestLabel, itemName, itemAmount, "RIGHT_OF_INVENTORY");
+    }
+
+    public static void writeTestFileVersion(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount, String searchResultPlacement)
+            throws IOException {
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("{" +
+                    "\"version\": 2," +
+                    "\"config\": {\"searchResultPlacement\": \"" + searchResultPlacement + "\"}," +
+                    "\"worlds\": {\""
+                    + worldID
+                    + "\":{\""
+                    + chestID
+                    + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}}");
+        }
     }
 }

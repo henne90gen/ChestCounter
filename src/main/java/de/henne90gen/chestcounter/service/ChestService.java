@@ -2,6 +2,7 @@ package de.henne90gen.chestcounter.service;
 
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.db.ChestDB;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.db.entities.Chests;
 import de.henne90gen.chestcounter.service.dtos.Chest;
@@ -173,6 +174,11 @@ public class ChestService implements IChestService {
 	public List<Chest> getChests(String worldId) {
 		Chests chests = db.loadChests(worldId);
 		return chests.entrySet().stream().map(this.convertChestsEntryToChest(worldId)).collect(Collectors.toList());
+	}
+
+	@Override
+	public ChestConfig getConfig() {
+		return db.loadChestConfig();
 	}
 
 	private Function<Map.Entry<String, ChestContent>, Chest> convertChestsEntryToChest(String worldId) {

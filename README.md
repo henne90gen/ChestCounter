@@ -18,7 +18,14 @@ Every time you open a chest, it is automatically added to the internal database.
 You can query the internal database at any time by typing into the search field that can be found in any inventory or chest screen.
 You can also give labels to your chests. This can be done by typing the label into the text field in the header of the chest screen.
 
+## Config
+
+The configuration is stored in the `chestcount.json` file in the `config` section.
+
+| Value                   | Default            | Description                                                 |
+| ----------------------- | ------------------ | ----------------------------------------------------------- |
+| `searchResultPlacement` | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY` |
+
 ## TODOs
 
-- make it work in creative mode
-- render labels above double-chests correctly
+-   make it work in creative mode

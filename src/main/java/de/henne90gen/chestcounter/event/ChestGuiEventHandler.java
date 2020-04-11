@@ -4,6 +4,8 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.Renderer;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
+import de.henne90gen.chestcounter.db.entities.SearchResultPlacement;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 import net.minecraft.client.Minecraft;
@@ -32,6 +34,8 @@ public class ChestGuiEventHandler {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
+    private static final int SEARCH_FIELD_WIDTH = 100;
+
     private final ChestCounter mod;
 
     private Chest currentChest = null;
@@ -54,8 +58,10 @@ public class ChestGuiEventHandler {
         LOGGER.debug("Screen opened: " + event.getGui().getClass());
 
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
-        addSearchFieldToScreen(event, screen);
-        addSearchToggleToScreen(event, screen);
+        ChestConfig config = mod.chestService.getConfig();
+        boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
+        addSearchFieldToScreen(event, screen, placeToTheRightOfInventory);
+        addSearchToggleToScreen(event, screen, placeToTheRightOfInventory);
 
         if (event.getGui() instanceof ChestScreen) {
             addChestLabelToScreen(event, screen);
@@ -164,7 +170,9 @@ public class ChestGuiEventHandler {
             byId = !searchToggle.isStateTriggered();
         }
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
-        Renderer.renderSearchResult(lastSearchResult, byId, screen);
+        ChestConfig config = mod.chestService.getConfig();
+        boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
+        Renderer.renderSearchResult(screen, lastSearchResult, byId, placeToTheRightOfInventory);
     }
 
     @SubscribeEvent
@@ -214,11 +222,16 @@ public class ChestGuiEventHandler {
         mod.chestService.save(currentChest);
     }
 
-    private void addSearchToggleToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen) {
-        int guiLeft = screen.getGuiLeft();
-        int xSize = screen.getXSize();
+    private void addSearchToggleToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen, boolean placeToTheRightOfInventory) {
+        int x;
+        if (placeToTheRightOfInventory) {
+            int guiLeft = screen.getGuiLeft();
+            int xSize = screen.getXSize();
+            x = guiLeft + xSize + Renderer.MARGIN;
+        } else {
+            x = 2 * Renderer.MARGIN + SEARCH_FIELD_WIDTH + 20;
+        }
 
-        int x = guiLeft + xSize + Renderer.MARGIN;
         searchToggle = new ToggleWidget(
                 x - 20, 2,
                 12, 15,
@@ -255,15 +268,20 @@ public class ChestGuiEventHandler {
         event.addWidget(labelField);
     }
 
-    private void addSearchFieldToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen) {
-        int guiLeft = screen.getGuiLeft();
-        int xSize = screen.getXSize();
+    private void addSearchFieldToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen, boolean placeToTheRightOfInventory) {
+        int x;
+        if (placeToTheRightOfInventory) {
+            int guiLeft = screen.getGuiLeft();
+            int xSize = screen.getXSize();
+            x = guiLeft + xSize + Renderer.MARGIN;
+        } else {
+            x = Renderer.MARGIN;
+        }
 
-        int x = guiLeft + xSize + Renderer.MARGIN;
         searchField = new TextFieldWidget(
                 Minecraft.getInstance().fontRenderer,
                 x, 2,
-                100, 10,
+                SEARCH_FIELD_WIDTH, 10,
                 "Search"
         );
         if (lastSearchResult != null && lastSearchResult.search != null) {

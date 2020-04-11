@@ -1,6 +1,8 @@
 package de.henne90gen.chestcounter.db;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.db.entities.ChestStorage;
 import de.henne90gen.chestcounter.db.entities.ChestWorlds;
 import de.henne90gen.chestcounter.db.entities.Chests;
@@ -15,90 +17,174 @@ import java.io.IOException;
 
 public class FileChestDB implements ChestDB {
 
-	private static final Logger LOGGER = LogManager.getLogger();
+    private static final Logger LOGGER = LogManager.getLogger();
 
-	private static final Gson gson = new Gson();
+    private static final Gson gson = new Gson();
 
-	private final String filename;
+    private final String filename;
 
-	public FileChestDB(String filename) {
-		this.filename = filename;
-	}
+    public FileChestDB(String filename) {
+        this.filename = filename;
+    }
 
-	@Nonnull
-	@Override
-	public Chests loadChests(String worldID) {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			return new Chests();
-		}
-		if (!worlds.containsKey(worldID)) {
-			worlds.put(worldID, new Chests());
-			writeChestWorlds(worlds);
-		}
-		return worlds.get(worldID);
-	}
+    @Nonnull
+    @Override
+    public Chests loadChests(String worldID) {
+        ChestStorage chestStorage = readChestStorage();
+        if (chestStorage == null) {
+            return new Chests();
+        }
 
-	@Override
-	public void saveChests(Chests chests, String worldID) {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			worlds = new ChestWorlds();
-		}
-		worlds.put(worldID, chests);
+        ChestWorlds worlds = chestStorage.worlds;
+        if (worlds == null) {
+            return new Chests();
+        }
 
-		writeChestWorlds(worlds);
-	}
+        if (!worlds.containsKey(worldID)) {
+            worlds.put(worldID, new Chests());
+            chestStorage.worlds = worlds;
+            writeChestStorage(chestStorage);
+        }
 
-	@Override
-	public void deleteWorld(String worldID) {
-		ChestWorlds worlds = readChestWorlds();
-		if (worlds == null) {
-			return;
-		}
+        return worlds.get(worldID);
+    }
 
-		worlds.remove(worldID);
+    @Override
+    public void saveChests(Chests chests, String worldID) {
+        ChestStorage chestStorage = readChestStorage();
+        if (chestStorage == null) {
+            chestStorage = new ChestStorage();
+        }
 
-		writeChestWorlds(worlds);
-	}
+        if (chestStorage.worlds == null) {
+            chestStorage.worlds = new ChestWorlds();
+        }
 
-	private void writeChestWorlds(ChestWorlds worlds) {
-		ChestStorage storage = new ChestStorage();
-		storage.version = ChestStorage.CURRENT_VERSION;
-		storage.worlds = worlds;
-		synchronized (this) {
-			File jsonFile = new File(filename);
-			try (FileWriter writer = new FileWriter(jsonFile)) {
-				gson.toJson(storage, writer);
-			} catch (IOException e) {
-				LOGGER.error(e);
-			}
-		}
-	}
+        chestStorage.worlds.put(worldID, chests);
 
-	private ChestWorlds readChestWorlds() {
-		File jsonFile = new File(filename);
-		if (!jsonFile.exists()) {
-			return null;
-		}
+        writeChestStorage(chestStorage);
+    }
 
-		ChestStorage storage;
-		synchronized (this) {
-			try (FileReader reader = new FileReader(jsonFile)) {
-				storage = gson.fromJson(reader, ChestStorage.class);
-			} catch (IllegalStateException | IOException e) {
-				LOGGER.error(e);
-				return null;
-			}
-		}
+    @Override
+    public void deleteWorld(String worldID) {
+        ChestStorage chestStorage = readChestStorage();
+        if (chestStorage == null) {
+            return;
+        }
 
-		if (storage == null) {
-			return null;
-		}
-		if (storage.version != ChestStorage.CURRENT_VERSION) {
-			// TODO create schema migrations
-			return null;
-		}
-		return storage.worlds;
-	}
+        ChestWorlds worlds = chestStorage.worlds;
+        if (worlds == null) {
+            return;
+        }
+
+        worlds.remove(worldID);
+
+        chestStorage.worlds = worlds;
+        writeChestStorage(chestStorage);
+    }
+
+    @Override
+    public ChestConfig loadChestConfig() {
+        ChestStorage chestStorage = readChestStorage();
+        if (chestStorage == null) {
+            return new ChestConfig();
+        }
+        return chestStorage.config;
+    }
+
+    @Override
+    public void saveChestConfig(ChestConfig config) {
+        ChestStorage chestStorage = readChestStorage();
+        if (chestStorage == null) {
+            chestStorage = new ChestStorage();
+        }
+        chestStorage.config = config;
+        writeChestStorage(chestStorage);
+    }
+
+    private void writeChestStorage(ChestStorage storage) {
+        synchronized (this) {
+            File jsonFile = new File(filename);
+            try (FileWriter writer = new FileWriter(jsonFile)) {
+                gson.toJson(storage, writer);
+            } catch (IOException e) {
+                LOGGER.error(e);
+            }
+        }
+    }
+
+    private ChestStorage readChestStorage() {
+        File jsonFile = new File(filename);
+        if (!jsonFile.exists()) {
+            return null;
+        }
+
+        JsonObject json;
+        synchronized (this) {
+            try (FileReader reader = new FileReader(jsonFile)) {
+                json = gson.fromJson(reader, JsonObject.class);
+            } catch (IllegalStateException | IOException e) {
+                LOGGER.error(e);
+                return null;
+            }
+        }
+
+        if (json == null) {
+            return null;
+        }
+        if (!json.has("version")) {
+            LOGGER.error("JSON file " + filename + " does not contain a version number.");
+            return null;
+        }
+
+        int version;
+        try {
+            version = json.get("version").getAsInt();
+        } catch (ClassCastException | IllegalStateException e) {
+            LOGGER.error(e);
+            return null;
+        }
+
+        if (version <= 0 || version > ChestStorage.CURRENT_VERSION) {
+            // something went wrong while parsing the version
+            return null;
+        }
+
+        return withSchemaMigrations(version, json);
+    }
+
+    private ChestStorage withSchemaMigrations(int version, JsonObject json) {
+        if (version != ChestStorage.CURRENT_VERSION) {
+            performSchemaMigrations(version, json);
+        }
+
+        ChestStorage storage = gson.fromJson(json.toString(), ChestStorage.class);
+
+        if (version != ChestStorage.CURRENT_VERSION) {
+            writeChestStorage(storage);
+        }
+        return storage;
+    }
+
+    private void performSchemaMigrations(int version, JsonObject json) {
+        if (version <= 1) {
+            migrateToVersion2(json);
+        }
+        // Template on how to add more migrations
+        // if (version <= 2) {
+        //     migrateToVersion3(version, json);
+        // }
+    }
+
+    /**
+     * Adds the config sub-tree
+     * Adds the property searchResultPlacement to the config object
+     */
+    private void migrateToVersion2(JsonObject json) {
+        json.remove("version");
+        json.addProperty("version", 2);
+        JsonObject configJson = new JsonObject();
+        configJson.addProperty("searchResultPlacement", "RIGHT_OF_INVENTORY");
+        json.add("config", configJson);
+    }
 }

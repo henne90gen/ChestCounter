@@ -1,5 +1,6 @@
 package de.henne90gen.chestcounter.service;
 
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 
@@ -56,4 +57,11 @@ public interface IChestService {
 	 * @return
 	 */
 	List<Chest> getChests(String worldId);
+
+	/**
+	 * Retrieve the current mod configuration
+	 *
+	 * @return
+	 */
+	ChestConfig getConfig();
 }
