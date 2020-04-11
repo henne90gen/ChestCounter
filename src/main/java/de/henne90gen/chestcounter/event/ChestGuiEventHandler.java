@@ -13,7 +13,6 @@ import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.ToggleWidget;
 import net.minecraft.inventory.container.Container;
-import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
@@ -52,6 +51,7 @@ public class ChestGuiEventHandler {
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
+        LOGGER.debug("Screen opened: " + event.getGui().getClass());
 
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
         addSearchFieldToScreen(event, screen);
@@ -69,7 +69,6 @@ public class ChestGuiEventHandler {
         if (shouldNotHandleGuiEvent(event)) {
             return;
         }
-        LOGGER.info("KeyPressed: " + event.getGui().getClass());
 
         keyPressedOnTextField(event, searchField);
         if (event.isCanceled()) {
@@ -177,7 +176,7 @@ public class ChestGuiEventHandler {
         BlockPos pos = event.getPos();
         World world = event.getWorld();
         TileEntity tileEntity = world.getTileEntity(pos);
-        if (!(tileEntity instanceof ChestTileEntity)) {
+        if (!Helper.isContainerTileEntity(tileEntity)) {
             return;
         }
 

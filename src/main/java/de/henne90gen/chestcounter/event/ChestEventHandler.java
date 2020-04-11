@@ -5,8 +5,6 @@ import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
@@ -62,7 +60,7 @@ public class ChestEventHandler {
                 }
 
                 TileEntity tileEntity = world.getTileEntity(pos);
-                if (tileEntity instanceof ChestTileEntity) {
+                if (Helper.isContainerTileEntity(tileEntity)) {
                     // it would be nice to update the chests right here, but sadly we only get empty chests from the world
                     continue;
                 }

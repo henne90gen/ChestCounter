@@ -5,6 +5,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.BarrelTileEntity;
 import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
@@ -23,12 +24,6 @@ public class Helper {
 
     private static final int INVENTORY_SIZE = 36;
 
-    public static void runInThread(Runnable runnable) {
-        Thread thread = new Thread(runnable);
-        thread.setDaemon(true);
-        thread.start();
-    }
-
     public static String getChestId(List<BlockPos> positions) {
         // copy and sort incoming list
         positions = new ArrayList<>(positions);
@@ -39,23 +34,6 @@ public class Helper {
                 .collect(Collectors.toList());
         return String.join(":", positionStrings);
     }
-
-//    public static BlockPos getBlockPosFromChestID(String chestId) {
-//        String[] parts = chestId.split(":");
-//        if (parts.length == 0) {
-//            return new BlockPos(0, 0, 0);
-//        }
-//        String[] coords = parts[0].split(",");
-//        try {
-//            float x = Float.parseFloat(coords[0]);
-//            float y = Float.parseFloat(coords[1]);
-//            float z = Float.parseFloat(coords[2]);
-//            return new BlockPos(x, y, z);
-//        } catch (NumberFormatException e) {
-//            LOGGER.warn("Could not get BlockPos from " + chestId);
-//        }
-//        return new BlockPos(0, 0, 0);
-//    }
 
     public static Comparator<BlockPos> getBlockPosComparator() {
         return (block, other) -> {
@@ -122,11 +100,15 @@ public class Helper {
         };
         for (BlockPos pos : positions) {
             TileEntity tileEntity = world.getTileEntity(pos);
-            if (tileEntity instanceof ChestTileEntity) {
+            if (isContainerTileEntity(tileEntity)) {
                 chestPositions.add(pos);
             }
         }
         return getChestId(chestPositions);
+    }
+
+    public static boolean isContainerTileEntity(TileEntity tileEntity) {
+        return tileEntity instanceof ChestTileEntity || tileEntity instanceof BarrelTileEntity;
     }
 
     public static Iterable<ItemStack> inventoryIterator(Container container) {
