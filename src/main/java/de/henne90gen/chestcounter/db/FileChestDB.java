@@ -83,13 +83,18 @@ public class FileChestDB implements ChestDB {
         writeChestStorage(chestStorage);
     }
 
-    @Override
+    @Nonnull
+	@Override
     public ChestConfig loadChestConfig() {
         ChestStorage chestStorage = readChestStorage();
         if (chestStorage == null) {
             return new ChestConfig();
         }
-        return chestStorage.config;
+        ChestConfig config = chestStorage.config;
+        if (config == null) {
+            return new ChestConfig();
+        }
+        return config;
     }
 
     @Override
@@ -97,6 +102,9 @@ public class FileChestDB implements ChestDB {
         ChestStorage chestStorage = readChestStorage();
         if (chestStorage == null) {
             chestStorage = new ChestStorage();
+        }
+        if (config == null) {
+            config = new ChestConfig();
         }
         chestStorage.config = config;
         writeChestStorage(chestStorage);

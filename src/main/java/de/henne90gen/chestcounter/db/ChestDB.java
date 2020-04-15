@@ -14,6 +14,7 @@ public interface ChestDB {
 
     void deleteWorld(String worldID);
 
+    @Nonnull
     ChestConfig loadChestConfig();
 
     void saveChestConfig(ChestConfig config);

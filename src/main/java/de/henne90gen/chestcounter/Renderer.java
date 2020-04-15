@@ -99,15 +99,15 @@ public class Renderer {
 		matrixStackIn.pop();
 	}
 
-	public static void renderSearchResult(ChestSearchResult searchResult, boolean byId, ContainerScreen<?> screen) {
-        int baseX;
-        if (placeToTheRightOfInventory) {
-            int guiLeft = screen.getGuiLeft();
-            int xSize = screen.getXSize();
-            baseX = guiLeft + xSize + MARGIN;
-        } else {
-            baseX = MARGIN;
-        }
+	public static void renderSearchResult(ContainerScreen<?> screen, ChestSearchResult searchResult, boolean byId, boolean placeToTheRightOfInventory) {
+		int baseX;
+		if (placeToTheRightOfInventory) {
+			int guiLeft = screen.getGuiLeft();
+			int xSize = screen.getXSize();
+			baseX = guiLeft + xSize + MARGIN;
+		} else {
+			baseX = MARGIN;
+		}
 
 		int currentY = 17;
 		Map<String, Map<String, Integer>> resultMap = byId ? searchResult.byId : searchResult.byLabel;
