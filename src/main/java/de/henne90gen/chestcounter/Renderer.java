@@ -12,13 +12,16 @@ import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.TransformationMatrix;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Map;
 
 public class Renderer {
 
 	public static final int MARGIN = 5;
+	public static final DecimalFormat TWO_DECIMAL_PLACES_FORMAT = new DecimalFormat("0.00");
 
 	public static void renderChestLabels(List<Chest> chests, ChestSearchResult searchResult, float maxDistance, float partialTickTime, MatrixStack matrixStack) {
 		for (Chest chest : chests) {
@@ -34,8 +37,9 @@ public class Renderer {
 			int color = 0xFFFFFF;
 			if (chestHasItemFromSearch) {
 				color = 0x00FF00;
+				maxDistance = Float.MAX_VALUE;
 			}
-			renderText(text, pos.getX(), pos.getY(), pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 1.0F);
+			renderTextInGame(text, pos.getX(), pos.getY(), pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 1.0F);
 
 			if (!chestHasItemFromSearch) {
 				continue;
@@ -44,20 +48,20 @@ public class Renderer {
 			color = 0xFFFFFF;
 			float offsetY = 0.29F;
 			int count = 0;
-			for (Map.Entry<String, Integer> entry : searchResult.byId.get(chest.id).entrySet()) {
+			for (Map.Entry<String, Integer> entry : searchResult.byId.get(chest.id).items.entrySet()) {
 				if (count > 5) {
 					break;
 				}
 				count++;
 
 				String entryText = entry.getValue() + "x " + entry.getKey();
-				renderText(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 0.4F);
+				renderTextInGame(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 0.4F);
 				offsetY += 0.11F;
 			}
 		}
 	}
 
-	private static void renderText(String text, float x, float y, float z, float maxDistance, int color, MatrixStack matrixStackIn, float partialTickTime, float scale) {
+	private static void renderTextInGame(String text, float x, float y, float z, float maxDistance, int color, MatrixStack matrixStackIn, float partialTickTime, float scale) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.player == null) {
 			return;
@@ -75,13 +79,13 @@ public class Renderer {
 			return;
 		}
 
-		// moves text out of the chest (with a radius of 1 block)
-		dx -= (dx * 1.0F) / distance;
-		dz -= (dz * 1.0F) / distance;
+		// moves text out of the chest (with the specified radius)
+		float radius = 0.5F;
+		dx -= (dx * radius) / distance;
+		dz -= (dz * radius) / distance;
 
 		matrixStackIn.push();
-
-		matrixStackIn.translate(dx, dy - 0.9F, dz);
+		matrixStackIn.translate(dx, dy - 0.85F, dz);
 		matrixStackIn.rotate(mc.getRenderManager().getCameraOrientation());
 		float finalScale = 0.025F * scale;
 		matrixStackIn.scale(-finalScale, -finalScale, finalScale);
@@ -110,23 +114,48 @@ public class Renderer {
 		}
 
 		int currentY = 17;
-		Map<String, Map<String, Integer>> resultMap = byId ? searchResult.byId : searchResult.byLabel;
-		for (Map.Entry<String, Map<String, Integer>> entry : resultMap.entrySet()) {
-			drawSmallString(entry.getKey(), baseX, currentY);
+		Map<String, ChestSearchResult.Entry> resultMap = byId ? searchResult.byId : searchResult.byLabel;
+		for (Map.Entry<String, ChestSearchResult.Entry> entry : resultMap.entrySet()) {
+			ChestSearchResult.Entry value = entry.getValue();
+			double distanceToChest = getDistanceToClosestPosition(value.positions);
+			String formattedDistance = TWO_DECIMAL_PLACES_FORMAT.format(distanceToChest);
+			String label = entry.getKey() + " -> " + formattedDistance + "m";
+			renderTextInMenu(label, baseX, currentY);
 
 			currentY += MARGIN;
-			Map<String, Integer> value = entry.getValue();
-			for (Map.Entry<String, Integer> amountEntry : value.entrySet()) {
+			for (Map.Entry<String, Integer> amountEntry : value.items.entrySet()) {
 				String amountString = amountEntry.getValue() + "x " + amountEntry.getKey();
 				int xOffset = 7;
-				drawSmallString(amountString, baseX + xOffset, currentY);
+				renderTextInMenu(amountString, baseX + xOffset, currentY);
 				currentY += MARGIN;
 			}
 			currentY += 3;
 		}
 	}
 
-	private static void drawSmallString(String text, float x, float y) {
+	private static double getDistanceToClosestPosition(List<Vec3d> positions) {
+		Minecraft mc = Minecraft.getInstance();
+		if (mc.player == null) {
+			return 0.0;
+		}
+
+		double playerX = mc.player.getPosX();
+		double playerY = mc.player.getPosY();
+		double playerZ = mc.player.getPosZ();
+		Vec3d playerPos = new Vec3d(playerX, playerY, playerZ);
+
+		double closestDistance = Double.MAX_VALUE;
+		for (Vec3d pos : positions) {
+			double distance = pos.distanceTo(playerPos);
+			if (distance < closestDistance) {
+				closestDistance = distance;
+			}
+		}
+
+		return closestDistance;
+	}
+
+	private static void renderTextInMenu(String text, float x, float y) {
 		RenderSystem.enableAlphaTest();
 		float scale = 0.5F;
 

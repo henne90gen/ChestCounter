@@ -257,16 +257,16 @@ public class ChestServiceTest {
 
 		ChestSearchResult searchResult = chestService.getItemCounts(worldID, "sa");
 		assertNotNull(searchResult);
-		Map<String, Map<String, Integer>> byLabel = searchResult.byLabel;
+		Map<String, ChestSearchResult.Entry> byLabel = searchResult.byLabel;
 		assertEquals(2, byLabel.size());
 
 		assertTrue(byLabel.containsKey("TestChest"));
-		Map<String, Integer> chestResult = byLabel.get("TestChest");
+		Map<String, Integer> chestResult = byLabel.get("TestChest").items;
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(64), chestResult.get("Sand"));
 
 		assertTrue(byLabel.containsKey("AnotherChest"));
-		chestResult = byLabel.get("AnotherChest");
+		chestResult = byLabel.get("AnotherChest").items;
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(25), chestResult.get("Sand"));
 	}
@@ -304,21 +304,21 @@ public class ChestServiceTest {
 
 		ChestSearchResult searchResult = chestService.getItemCounts(worldID, "sa");
 		assertNotNull(searchResult);
-		Map<String, Map<String, Integer>> byId = searchResult.byId;
+		Map<String, ChestSearchResult.Entry> byId = searchResult.byId;
 		assertEquals(3, byId.size());
 
 		assertTrue(byId.containsKey("1,2,3"));
-		Map<String, Integer> chestResult = byId.get("1,2,3");
+		Map<String, Integer> chestResult = byId.get("1,2,3").items;
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(32), chestResult.get("Sand"));
 
 		assertTrue(byId.containsKey("1,2,4"));
-		chestResult = byId.get("1,2,4");
+		chestResult = byId.get("1,2,4").items;
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(32), chestResult.get("Sand"));
 
 		assertTrue(byId.containsKey("1,2,6"));
-		chestResult = byId.get("1,2,6");
+		chestResult = byId.get("1,2,6").items;
 		assertTrue(chestResult.containsKey("Sand"));
 		assertEquals(new Integer(25), chestResult.get("Sand"));
 	}

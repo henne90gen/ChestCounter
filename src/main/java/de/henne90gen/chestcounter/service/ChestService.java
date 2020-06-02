@@ -7,6 +7,8 @@ import de.henne90gen.chestcounter.db.entities.ChestContent;
 import de.henne90gen.chestcounter.db.entities.Chests;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -145,29 +147,47 @@ public class ChestService implements IChestService {
 
 		for (Map.Entry<String, ChestContent> chestEntry : chests.entrySet()) {
 			for (Map.Entry<String, Integer> itemEntry : chestEntry.getValue().items.entrySet()) {
-				if (itemEntry.getKey().toLowerCase().contains(queryString.toLowerCase())) {
-					String label;
-					if (chestEntry.getValue().label == null || chestEntry.getValue().label.isEmpty()) {
-						label = chestEntry.getKey();
-					} else {
-						label = chestEntry.getValue().label;
-					}
-					updateResultMap(result.byLabel, itemEntry, label);
-					updateResultMap(result.byId, itemEntry, chestEntry.getKey());
+				String lowerCaseItemName = itemEntry.getKey().toLowerCase();
+				if (!lowerCaseItemName.contains(queryString.toLowerCase())) {
+					continue;
 				}
+
+				String chestId = chestEntry.getKey();
+				String label = chestEntry.getValue().label;
+				if (label == null || label.isEmpty()) {
+					label = chestId;
+				}
+
+				Vec3d position = getAveragePosition(chestId);
+				updateResultMap(result.byLabel, itemEntry, position, label);
+				updateResultMap(result.byId, itemEntry, position, chestId);
 			}
 		}
+
 		return result;
 	}
 
-	private void updateResultMap(Map<String, Map<String, Integer>> result, Map.Entry<String, Integer> itemEntry, String key) {
-		Map<String, Integer> amountMap = result.getOrDefault(key, new LinkedHashMap<>());
-		Integer amount = amountMap.getOrDefault(itemEntry.getKey(), 0);
+	private Vec3d getAveragePosition(String chestId) {
+		Vec3d position = new Vec3d(0, 0, 0);
 
+		List<BlockPos> positions = Helper.extractPositionsFromChestId(chestId);
+		for (BlockPos pos : positions) {
+			position = position.add(pos.getX(), pos.getY(), pos.getZ());
+		}
+
+		return new Vec3d(position.x / positions.size(), position.y / positions.size(), position.z / positions.size());
+	}
+
+	private void updateResultMap(Map<String, ChestSearchResult.Entry> result, Map.Entry<String, Integer> itemEntry, Vec3d pos, String key) {
+		ChestSearchResult.Entry resultEntry = result.getOrDefault(key, new ChestSearchResult.Entry());
+
+		resultEntry.positions.add(pos);
+
+		Integer amount = resultEntry.items.getOrDefault(itemEntry.getKey(), 0);
 		amount += itemEntry.getValue();
+		resultEntry.items.put(itemEntry.getKey(), amount);
 
-		amountMap.put(itemEntry.getKey(), amount);
-		result.put(key, amountMap);
+		result.put(key, resultEntry);
 	}
 
 	@Override

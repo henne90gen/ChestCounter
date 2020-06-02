@@ -12,7 +12,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.Collections;
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -72,8 +71,8 @@ public class ChestEventHandler {
                     continue;
                 }
 
-                String partialChestId = Helper.getChestId(Collections.singletonList(pos));
-                mod.chestService.delete(chest.worldId, partialChestId);
+                String chestId = Helper.getChestId(mc.world, pos);
+                mod.chestService.delete(chest.worldId, chestId);
             }
         }
     }
