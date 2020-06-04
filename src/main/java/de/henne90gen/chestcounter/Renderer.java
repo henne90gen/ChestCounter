@@ -35,11 +35,12 @@ public class Renderer {
 			BlockPos pos = Helper.getClosestPositionToPlayer(positions, partialTickTime);
 
 			int color = 0xFFFFFF;
+			float finalMaxDistance = maxDistance;
 			if (chestHasItemFromSearch) {
 				color = 0x00FF00;
-				maxDistance = Float.MAX_VALUE;
+				finalMaxDistance = Float.MAX_VALUE;
 			}
-			renderTextInGame(text, pos.getX(), pos.getY(), pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 1.0F);
+			renderTextInGame(text, pos.getX(), pos.getY(), pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, 1.0F);
 
 			if (!chestHasItemFromSearch) {
 				continue;
@@ -55,7 +56,7 @@ public class Renderer {
 				count++;
 
 				String entryText = entry.getValue() + "x " + entry.getKey();
-				renderTextInGame(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), maxDistance, color, matrixStack, partialTickTime, 0.4F);
+				renderTextInGame(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, 0.4F);
 				offsetY += 0.11F;
 			}
 		}
