@@ -20,6 +20,8 @@ import java.util.Map;
 
 public class Renderer {
 
+	public static final float CHEST_NAME_FONT_SIZE = 0.4F;
+	public static final float SEARCH_RESULT_FONT_SIZE = CHEST_NAME_FONT_SIZE / 2.0F;
 	public static final int MARGIN = 5;
 	public static final DecimalFormat TWO_DECIMAL_PLACES_FORMAT = new DecimalFormat("0.00");
 
@@ -40,14 +42,14 @@ public class Renderer {
 				color = 0x00FF00;
 				finalMaxDistance = Float.MAX_VALUE;
 			}
-			renderTextInGame(text, pos.getX(), pos.getY(), pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, 1.0F);
+			renderTextInGame(text, pos.getX(), pos.getY(), pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, CHEST_NAME_FONT_SIZE);
 
 			if (!chestHasItemFromSearch) {
 				continue;
 			}
 
 			color = 0xFFFFFF;
-			float offsetY = 0.29F;
+			float offsetY = CHEST_NAME_FONT_SIZE / 3.0F;
 			int count = 0;
 			for (Map.Entry<String, Integer> entry : searchResult.byId.get(chest.id).items.entrySet()) {
 				if (count > 5) {
@@ -56,8 +58,8 @@ public class Renderer {
 				count++;
 
 				String entryText = entry.getValue() + "x " + entry.getKey();
-				renderTextInGame(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, 0.4F);
-				offsetY += 0.11F;
+				renderTextInGame(entryText, pos.getX(), pos.getY() - offsetY, pos.getZ(), finalMaxDistance, color, matrixStack, partialTickTime, SEARCH_RESULT_FONT_SIZE);
+				offsetY += SEARCH_RESULT_FONT_SIZE / 3.0F;
 			}
 		}
 	}
@@ -81,12 +83,12 @@ public class Renderer {
 		}
 
 		// moves text out of the chest (with the specified radius)
-		float radius = 0.5F;
+		float radius = 0.75F;
 		dx -= (dx * radius) / distance;
 		dz -= (dz * radius) / distance;
 
 		matrixStackIn.push();
-		matrixStackIn.translate(dx, dy - 0.85F, dz);
+		matrixStackIn.translate(dx, dy - 0.9F, dz);
 		matrixStackIn.rotate(mc.getRenderManager().getCameraOrientation());
 		float finalScale = 0.025F * scale;
 		matrixStackIn.scale(-finalScale, -finalScale, finalScale);
