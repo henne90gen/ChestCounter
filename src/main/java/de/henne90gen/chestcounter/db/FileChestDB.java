@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 public class FileChestDB implements ChestDB {
 
@@ -84,7 +85,7 @@ public class FileChestDB implements ChestDB {
     }
 
     @Nonnull
-	@Override
+    @Override
     public ChestConfig loadChestConfig() {
         ChestStorage chestStorage = readChestStorage();
         if (chestStorage == null) {
@@ -168,13 +169,25 @@ public class FileChestDB implements ChestDB {
 
         ChestStorage storage = gson.fromJson(json.toString(), ChestStorage.class);
 
-        if (version != ChestStorage.CURRENT_VERSION || storage.config == null) {
-            if (storage.config == null) {
-                storage.config = new ChestConfig();
-            }
+        if (version != ChestStorage.CURRENT_VERSION || configPropertyIsMissing(json)) {
             writeChestStorage(storage);
         }
         return storage;
+    }
+
+    private boolean configPropertyIsMissing(JsonObject json) {
+        JsonObject config = json.getAsJsonObject("config");
+        if (config == null) {
+            return true;
+        }
+
+        for (Field field : ChestConfig.class.getDeclaredFields()) {
+            String name = field.getName();
+            if (config.get(name) == null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void performSchemaMigrations(int version, JsonObject json) {

@@ -2,19 +2,15 @@ package de.henne90gen.chestcounter;
 
 import de.henne90gen.chestcounter.db.ChestDB;
 import de.henne90gen.chestcounter.db.FileChestDB;
-import de.henne90gen.chestcounter.db.entities.ChestConfig;
-import de.henne90gen.chestcounter.db.entities.ChestContent;
-import de.henne90gen.chestcounter.db.entities.Chests;
-import de.henne90gen.chestcounter.db.entities.SearchResultPlacement;
+import de.henne90gen.chestcounter.db.entities.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -250,6 +246,7 @@ public class FileChestDBTest {
         ChestConfig chestConfig = chestDB.loadChestConfig();
         assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
         assertTrue(chestConfig.enabled);
+        chestCounter.delete();
     }
 
     @Test
@@ -272,6 +269,7 @@ public class FileChestDBTest {
         ChestConfig chestConfig = chestDB.loadChestConfig();
         assertEquals(SearchResultPlacement.LEFT_OF_INVENTORY, chestConfig.searchResultPlacement);
         assertFalse(chestConfig.enabled);
+        chestCounter.delete();
     }
 
     @Test
@@ -285,6 +283,36 @@ public class FileChestDBTest {
         FileChestDB newChestDB = new FileChestDB(filename);
         ChestConfig chestConfig = newChestDB.loadChestConfig();
         assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
+        new File(filename).delete();
+    }
+
+    @Test
+    public void testLoadConfigWithMissingValues() throws IOException {
+        String filename = "./loads-config-with-missing-values-test.json";
+        FileChestDB chestDB = new FileChestDB(filename);
+
+        try (FileWriter writer = new FileWriter(new File(filename))) {
+            writer.write("{" +
+                    "\"version\": " + ChestStorage.CURRENT_VERSION + "," +
+                    "\"config\": {}," +
+                    "\"worlds\": {}}");
+        }
+
+        ChestConfig chestConfig = chestDB.loadChestConfig();
+
+        assertTrue(chestConfig.enabled);
+        assertEquals(SearchResultPlacement.RIGHT_OF_INVENTORY, chestConfig.searchResultPlacement);
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(filename)))) {
+            List<String> lines = reader.lines().collect(Collectors.toList());
+            String expectedLine = "{" +
+                    "\"version\":" + ChestStorage.CURRENT_VERSION + "," +
+                    "\"config\":{\"enabled\":true,\"searchResultPlacement\":\"" + SearchResultPlacement.RIGHT_OF_INVENTORY + "\"}," +
+                    "\"worlds\":{}}";
+            assertEquals(1, lines.size());
+            assertEquals(expectedLine, lines.get(0));
+        }
+        new File(filename).delete();
     }
 
     public static void writeTestFileVersion1(File file, String worldID, String chestID, String chestLabel, String itemName, int itemAmount)
@@ -323,7 +351,7 @@ public class FileChestDBTest {
             throws IOException {
         try (FileWriter writer = new FileWriter(file)) {
             writer.write("{" +
-                    "\"version\": 2," +
+                    "\"version\": " + ChestStorage.CURRENT_VERSION + "," +
                     "\"config\": {\"searchResultPlacement\": \"" + searchResultPlacement + "\", \"enabled\": " + enabled + "}," +
                     "\"worlds\": {\""
                     + worldID
