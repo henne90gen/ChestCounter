@@ -42,13 +42,11 @@ public class CacheChestDB implements ChestDB {
     @Nonnull
     @Override
     public ChestConfig loadChestConfig() {
-        // TODO implement caching
         return delegate.loadChestConfig();
     }
 
     @Override
     public void saveChestConfig(ChestConfig config) {
-        // TODO implement caching
         delegate.saveChestConfig(config);
     }
 }

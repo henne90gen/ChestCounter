@@ -14,6 +14,8 @@ import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.ToggleWidget;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.client.util.InputMappings;
 import net.minecraft.inventory.container.Container;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
@@ -21,8 +23,11 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Mod;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,33 +39,44 @@ public class ChestGuiEventHandler {
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final int SEARCH_FIELD_WIDTH = 100;
+	private static final int SEARCH_FIELD_WIDTH = 100;
+	public static final String KEYBIND_CATEGORY = "key." + ChestCounter.MOD_ID + ".category";
 
     private final ChestCounter mod;
 
-    private Chest currentChest = null;
+	private Chest currentChest = null;
+	private TextFieldWidget searchField = null;
+	private ToggleWidget searchToggle = null;
+	private ChestSearchResult lastSearchResult = null;
+	private TextFieldWidget labelField = null;
+	public KeyBinding showSearchResultsInInventory;
 
-    private TextFieldWidget searchField = null;
-    private ToggleWidget searchToggle = null;
-    private ChestSearchResult lastSearchResult = null;
+	public ChestGuiEventHandler(ChestCounter mod) {
+		this.mod = mod;
+		registerKeybindings();
+	}
 
-    private TextFieldWidget labelField = null;
+	private void registerKeybindings() {
+		InputMappings.Type type = InputMappings.Type.KEYSYM;
+		// S -> 83
+		// C -> 67
+		int keyCode = 67;
+		ResourceLocation resourceLocation = new ResourceLocation(ChestCounter.MOD_ID, "show_search_results_in_inventory");
+		showSearchResultsInInventory = new KeyBinding("key." + resourceLocation.getNamespace() + "." + resourceLocation.getPath(), KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL, type, keyCode, KEYBIND_CATEGORY);
+		ClientRegistry.registerKeyBinding(showSearchResultsInInventory);
+	}
 
-    public ChestGuiEventHandler(ChestCounter mod) {
-        this.mod = mod;
-    }
+	@SubscribeEvent
+	public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
+		ChestConfig config = mod.chestService.getConfig();
+		if (!config.enabled) {
+			return;
+		}
 
-    @SubscribeEvent
-    public void initGui(GuiScreenEvent.InitGuiEvent.Post event) {
-        ChestConfig config = mod.chestService.getConfig();
-        if (!config.enabled) {
-            return;
-        }
-
-        if (shouldNotHandleGuiEvent(event)) {
-            return;
-        }
-        LOGGER.debug("Screen opened: " + event.getGui().getClass());
+		if (shouldNotHandleGuiEvent(event)) {
+			return;
+		}
+		LOGGER.debug("Screen opened: " + event.getGui().getClass());
 
         ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
         boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
@@ -76,16 +92,21 @@ public class ChestGuiEventHandler {
 
     @SubscribeEvent
     public void keyPressed(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event) {
-        ChestConfig config = mod.chestService.getConfig();
-        if (!config.enabled) {
-            return;
-        }
+		ChestConfig config = mod.chestService.getConfig();
+		if (showSearchResultsInInventory.isPressed()) {
+			config.enabled = !config.enabled;
+			mod.chestService.setConfig(config);
+		}
 
-        if (shouldNotHandleGuiEvent(event)) {
-            return;
-        }
+		if (!config.enabled) {
+			return;
+		}
 
-        keyPressedOnTextField(event, searchField);
+		if (shouldNotHandleGuiEvent(event)) {
+			return;
+		}
+
+		keyPressedOnTextField(event, searchField);
         if (event.isCanceled()) {
             search();
             return;

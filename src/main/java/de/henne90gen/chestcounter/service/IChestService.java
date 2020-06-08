@@ -64,4 +64,11 @@ public interface IChestService {
 	 * @return
 	 */
 	ChestConfig getConfig();
+
+	/**
+	 * Set the current mod configuration
+	 *
+	 * @return
+	 */
+	void setConfig(ChestConfig config);
 }

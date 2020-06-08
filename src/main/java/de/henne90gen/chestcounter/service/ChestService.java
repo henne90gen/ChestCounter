@@ -201,6 +201,11 @@ public class ChestService implements IChestService {
 		return db.loadChestConfig();
 	}
 
+	@Override
+	public void setConfig(ChestConfig config) {
+		db.saveChestConfig(config);
+	}
+
 	private Function<Map.Entry<String, ChestContent>, Chest> convertChestsEntryToChest(String worldId) {
 		return (entry) -> {
 			Chest chest = new Chest();
