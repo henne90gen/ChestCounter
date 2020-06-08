@@ -20,12 +20,22 @@ You can also give labels to your chests. This can be done by typing the label in
 
 ## Config
 
-The configuration is stored in the `chestcount.json` file in the `config` section.
+The configuration is stored in the `chestcount.json` file in the root folder of your minecraft installation (usually `<HOME_DIR>/.minecraft`).
+This file also contains all the data that the mod has accumulated about your chests and items, so be careful when editing this file.
+
+Example file:
+```json
+{
+    "version": 2,
+    "config": {
+        "enabled": true,
+        "searchResultPlacement": "RIGHT_OF_INVENTORY"
+    },
+    "worlds": {}
+}
+```
 
 | Value                   | Default            | Description                                                 |
 | ----------------------- | ------------------ | ----------------------------------------------------------- |
+| `enabled`               | true               | Whether the mod should be enabled                           |
 | `searchResultPlacement` | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY` |
-
-## TODOs
-
--   make it work in creative mode

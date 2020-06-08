@@ -168,7 +168,10 @@ public class FileChestDB implements ChestDB {
 
         ChestStorage storage = gson.fromJson(json.toString(), ChestStorage.class);
 
-        if (version != ChestStorage.CURRENT_VERSION) {
+        if (version != ChestStorage.CURRENT_VERSION || storage.config == null) {
+            if (storage.config == null) {
+                storage.config = new ChestConfig();
+            }
             writeChestStorage(storage);
         }
         return storage;
@@ -207,6 +210,11 @@ public class FileChestDB implements ChestDB {
         bumpVersion(json, 3);
 
         JsonObject configJson = json.getAsJsonObject("config");
+        if (configJson == null) {
+            // the config will be added with default values later on
+            return;
+        }
+
         configJson.addProperty("enabled", true);
     }
 }
