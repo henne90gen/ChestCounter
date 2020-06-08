@@ -18,6 +18,10 @@ Every time you open a chest, it is automatically added to the internal database.
 You can query the internal database at any time by typing into the search field that can be found in any inventory or chest screen.
 You can also give labels to your chests. This can be done by typing the label into the text field in the header of the chest screen.
 
+## Keyboard Shortcuts
+
+- Ctrl+C: enables/disables the mod (same as setting `enabled` in the config)
+
 ## Config
 
 The configuration is stored in the `chestcount.json` file in the root folder of your minecraft installation (usually `<HOME_DIR>/.minecraft`).
@@ -37,5 +41,5 @@ Example file:
 
 | Value                   | Default            | Description                                                 |
 | ----------------------- | ------------------ | ----------------------------------------------------------- |
-| `enabled`               | true               | Whether the mod should be enabled                           |
+| `enabled`               | true               | Disabling the mod means that no additional UI will be rendered and it will also no longer collect data on your items |
 | `searchResultPlacement` | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY` |
