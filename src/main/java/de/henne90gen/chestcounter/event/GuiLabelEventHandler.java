@@ -113,16 +113,9 @@ public class GuiLabelEventHandler extends GuiEventHandler {
     private void addChestLabelToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen) {
         int guiLeft = screen.getGuiLeft();
         int guiTop = screen.getGuiTop();
-        ChestScreen chestScreen = (ChestScreen) event.getGui();
-        int width = 128;
-        int numRows = chestScreen.getContainer().getNumRows();
-        int offsetLeft = 40;
-        if (numRows == 6) {
-            // large chest
-            offsetLeft = 75;
-            width = 93;
-        }
-        int offsetTop = 5;
+        int width = 165;
+        int offsetLeft = 5;
+        int offsetTop = -12;
         labelField = new TextFieldWidget(
                 Minecraft.getInstance().fontRenderer,
                 guiLeft + offsetLeft, guiTop + offsetTop,
