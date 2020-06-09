@@ -14,9 +14,9 @@ public class ChestSearchResult {
 	}
 
 	/**
-	 * The search text.
-	 */
-	public String search;
+     * The search text.
+     */
+    public String search = "";
 
 	/**
 	 * Map of chest labels to the items they contain.

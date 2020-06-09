@@ -39,7 +39,8 @@ Example file:
 }
 ```
 
-| Value                   | Default            | Description                                                 |
-| ----------------------- | ------------------ | ----------------------------------------------------------- |
-| `enabled`               | true               | Disabling the mod means that no additional UI will be rendered and it will also no longer collect data on your items |
-| `searchResultPlacement` | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY` |
+| Value                         | Default            | Description                                                       |
+| ----------------------------- | ------------------ | ----------------------------------------------------------------- |
+| `enabled`                     | true               | Disabling the mod means that no additional UI will be rendered and it will also no longer collect data on your items |
+| `searchResultPlacement`       | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY`       |
+| `showSearchResultInInventory` | true               | Whether the search result should be shown in the inventory or not |

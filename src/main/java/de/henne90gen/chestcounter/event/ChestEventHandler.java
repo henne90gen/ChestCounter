@@ -1,21 +1,33 @@
 package de.henne90gen.chestcounter.event;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
 import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
+import de.henne90gen.chestcounter.Renderer;
 import de.henne90gen.chestcounter.db.entities.ChestConfig;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestEventHandler {
+
+    private static final Logger LOGGER = LogManager.getLogger();
 
     // TODO make this configurable
     private static final int CHECK_FOR_CHESTS_EVERY_X_TICKS = 20;
@@ -75,5 +87,69 @@ public class ChestEventHandler {
                 mod.chestService.delete(chest.worldId, chestId);
             }
         }
+    }
+
+    @SubscribeEvent
+    public void keyPressed(InputEvent.KeyInputEvent event) {
+        if (event.getAction() != GLFW.GLFW_RELEASE) {
+            return;
+        }
+
+        // TODO this does not work on chest screens yet
+
+        ChestConfig config = mod.chestService.getConfig();
+        LOGGER.debug("before: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
+        if (mod.toggleModEnabled.isPressed()) {
+            config.enabled = !config.enabled;
+            LOGGER.debug("toggled enabled");
+        }
+        if (mod.showSearchResultInInventory.isPressed()) {
+            config.showSearchResultInInventory = !config.showSearchResultInInventory;
+            LOGGER.debug("toggled showSearch");
+        }
+        LOGGER.debug("after: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
+        mod.chestService.setConfig(config);
+    }
+
+    @SubscribeEvent
+    public void blockClicked(PlayerInteractEvent.RightClickBlock event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
+        if (!event.getWorld().isRemote()) {
+            return;
+        }
+
+        BlockPos pos = event.getPos();
+        World world = event.getWorld();
+        TileEntity tileEntity = world.getTileEntity(pos);
+        if (!Helper.isContainerTileEntity(tileEntity)) {
+            return;
+        }
+
+        String worldId = Helper.getWorldID();
+        String chestId = Helper.getChestId(world, pos);
+        mod.currentChest = mod.chestService.getChest(worldId, chestId);
+        LOGGER.debug("Setting current chest to: " + mod.currentChest.label + "(" + mod.currentChest.id + ")");
+    }
+
+    @SubscribeEvent
+    public void render(RenderWorldLastEvent event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled) {
+            return;
+        }
+
+        List<Chest> chests = mod.chestService.getChests(Helper.getWorldID());
+        if (chests == null) {
+            return;
+        }
+
+        float maxDistance = 10.0F;
+        float partialTickTime = event.getPartialTicks();
+        MatrixStack matrixStack = event.getMatrixStack();
+        Renderer.renderChestLabels(chests, mod.lastSearchResult, maxDistance, partialTickTime, matrixStack);
     }
 }
