@@ -76,7 +76,7 @@ public class GuiLabelEventHandler extends GuiEventHandler {
         mod.chestService.updateLabel(mod.currentChest.worldId, mod.currentChest.id, labelField.getText());
         if (event.isCanceled()) {
             String text = labelField.getText();
-            labelField.setText(text.substring(0, text.length() - 1));
+            labelField.setText(text);
         }
     }
 
@@ -110,6 +110,15 @@ public class GuiLabelEventHandler extends GuiEventHandler {
         mod.search();
     }
 
+    @SubscribeEvent
+    public void renderGui(GuiScreenEvent.DrawScreenEvent.Pre event) {
+        ChestConfig config = mod.chestService.getConfig();
+        boolean visible = config.enabled;
+        if (labelField != null) {
+            labelField.visible = visible;
+        }
+    }
+
     private void addChestLabelToScreen(GuiScreenEvent.InitGuiEvent.Post event, ContainerScreen<?> screen) {
         int guiLeft = screen.getGuiLeft();
         int guiTop = screen.getGuiTop();
@@ -122,6 +131,8 @@ public class GuiLabelEventHandler extends GuiEventHandler {
                 width, 10,
                 "Chest Label"
         );
+        ChestConfig config = mod.chestService.getConfig();
+        labelField.visible = config.enabled;
         if (mod.currentChest != null && mod.currentChest.label != null) {
             labelField.setText(mod.currentChest.label);
         }
