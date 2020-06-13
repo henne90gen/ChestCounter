@@ -120,6 +120,7 @@ public class GuiSearchEventHandler extends GuiEventHandler {
         }
 
         // this only works for picking up items, not for dropping them back into the inventory
+        // TODO investigate GuiScreenEvent.ActionPerformedEvent, maybe that works better for getting the current chest content
         saveCurrentChest(mod, event);
         if (searchField != null) {
             mod.search(searchField.getText());

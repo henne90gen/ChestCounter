@@ -97,36 +97,45 @@ public class ChestEventHandler {
             return;
         }
 
-        // TODO this does not work on chest screens yet
+        checkKeybindings();
+    }
 
+    private void checkKeybindings() {
         ChestConfig config = mod.chestService.getConfig();
-        LOGGER.debug("before: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
-        if (mod.toggleModEnabled.isPressed()) {
-            config.enabled = !config.enabled;
-            String msg = "["+MOD_NAME + "] ";
-            if (config.enabled) {
-                msg += "Enabled";
-            } else {
-                msg += "Disabled";
-            }
-            if (Minecraft.getInstance().player != null) {
-                Minecraft.getInstance().player.sendChatMessage(msg);
-            }
-        }
+
+        checkToggleMod(config);
+        checkShowSearchResultInInventory(config);
+
+        mod.chestService.setConfig(config);
+    }
+
+    private void checkShowSearchResultInInventory(ChestConfig config) {
         if (mod.showSearchResultInInventory.isPressed()) {
             config.showSearchResultInInventory = !config.showSearchResultInInventory;
-            String msg = "[" + MOD_NAME + "] Search results ";
             if (config.showSearchResultInInventory) {
-                msg += "visible";
+                sendChatMessage("Search results visible");
             } else {
-                msg += "hidden";
-            }
-            if (Minecraft.getInstance().player != null) {
-                Minecraft.getInstance().player.sendChatMessage(msg);
+                sendChatMessage("Search results hidden");
             }
         }
-        LOGGER.debug("after: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
-        mod.chestService.setConfig(config);
+    }
+
+    private void checkToggleMod(ChestConfig config) {
+        if (mod.toggleModEnabled.isPressed()) {
+            config.enabled = !config.enabled;
+            if (config.enabled) {
+                sendChatMessage("Enabled");
+            } else {
+                sendChatMessage("Disabled");
+            }
+        }
+    }
+
+    private void sendChatMessage(String message) {
+        String finalMessage = "[" + MOD_NAME + "] " + message;
+        if (Minecraft.getInstance().player != null && Minecraft.getInstance().world != null && Minecraft.getInstance().world.isRemote) {
+            Minecraft.getInstance().player.sendChatMessage(finalMessage);
+        }
     }
 
     @SubscribeEvent
