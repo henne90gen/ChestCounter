@@ -12,6 +12,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.TickEvent;
@@ -89,6 +90,24 @@ public class ChestEventHandler {
                 mod.chestService.delete(chest.worldId, chestId);
             }
         }
+    }
+
+    @SubscribeEvent
+    public void keyPressedGui(GuiScreenEvent.KeyboardKeyReleasedEvent event) {
+        LOGGER.info("Event: {}", event.getClass());
+        checkKeybindings();
+    }
+
+    @SubscribeEvent
+    public void keyPressedGui(GuiScreenEvent.KeyboardKeyPressedEvent event) {
+        LOGGER.info("Event: {}", event.getClass());
+        checkKeybindings();
+    }
+
+    @SubscribeEvent
+    public void keyPressedGui(GuiScreenEvent.KeyboardKeyEvent event) {
+        LOGGER.info("Event: {}", event.getClass());
+        checkKeybindings();
     }
 
     @SubscribeEvent
