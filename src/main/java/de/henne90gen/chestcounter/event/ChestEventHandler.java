@@ -24,6 +24,8 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
+import static de.henne90gen.chestcounter.ChestCounter.MOD_NAME;
+
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ChestEventHandler {
 
@@ -101,11 +103,27 @@ public class ChestEventHandler {
         LOGGER.debug("before: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
         if (mod.toggleModEnabled.isPressed()) {
             config.enabled = !config.enabled;
-            LOGGER.debug("toggled enabled");
+            String msg = "["+MOD_NAME + "] ";
+            if (config.enabled) {
+                msg += "Enabled";
+            } else {
+                msg += "Disabled";
+            }
+            if (Minecraft.getInstance().player != null) {
+                Minecraft.getInstance().player.sendChatMessage(msg);
+            }
         }
         if (mod.showSearchResultInInventory.isPressed()) {
             config.showSearchResultInInventory = !config.showSearchResultInInventory;
-            LOGGER.debug("toggled showSearch");
+            String msg = "[" + MOD_NAME + "] Search results ";
+            if (config.showSearchResultInInventory) {
+                msg += "visible";
+            } else {
+                msg += "hidden";
+            }
+            if (Minecraft.getInstance().player != null) {
+                Minecraft.getInstance().player.sendChatMessage(msg);
+            }
         }
         LOGGER.debug("after: enabled: {}, showSearch: {}", config.enabled, config.showSearchResultInInventory);
         mod.chestService.setConfig(config);
