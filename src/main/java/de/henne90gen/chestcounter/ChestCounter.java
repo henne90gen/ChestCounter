@@ -30,8 +30,6 @@ public class ChestCounter {
     public static final String MOD_ID = "chestcounter";
     public static final String MOD_NAME = "Chest Counter";
 
-    public static final String KEYBIND_CATEGORY = "key." + ChestCounter.MOD_ID + ".category";
-
     public ChestService chestService;
 
     public Chest currentChest = null;
@@ -70,15 +68,15 @@ public class ChestCounter {
         {
             // TODO change to F8
             int keyCode = 67; // C
-            String description = "toggle_mod_enabled";
-            toggleModEnabled = new KeyBinding(description, KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, KEYBIND_CATEGORY);
+            String description = "Toggle mod enabled";
+            toggleModEnabled = new KeyBinding(description, KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
             ClientRegistry.registerKeyBinding(toggleModEnabled);
         }
         {
             // TODO change to CTRL+F8
             int keyCode = 83; // S
-            String description = "show_search_result_in_inventory";
-            showSearchResultInInventory = new KeyBinding(description, KeyConflictContext.GUI, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, KEYBIND_CATEGORY);
+            String description = "Show search results in inventory";
+            showSearchResultInInventory = new KeyBinding(description, KeyConflictContext.GUI, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
             ClientRegistry.registerKeyBinding(showSearchResultInInventory);
         }
     }
@@ -93,7 +91,7 @@ public class ChestCounter {
 
     public void search(String query) {
         if (query == null) {
-            // use last search result
+            // use last search query
             query = lastSearchResult.search;
         }
         lastSearchResult = chestService.getItemCounts(Helper.getWorldID(), query);
