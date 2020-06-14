@@ -181,7 +181,7 @@ public class Helper {
             @Override
             public Pair<String, Integer> next() {
                 ItemStack itemStack = container.inventorySlots.get(i++).getStack();
-                return new Pair<>(itemStack.getDisplayName().toString(), itemStack.getCount());
+                return new Pair<>(itemStack.getDisplayName().getString(), itemStack.getCount());
             }
         };
         Spliterator<Pair<String, Integer>> spliterator = Spliterators.spliteratorUnknownSize(iterator, 0);

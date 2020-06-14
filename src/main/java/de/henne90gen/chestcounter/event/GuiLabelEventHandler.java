@@ -73,11 +73,12 @@ public class GuiLabelEventHandler extends GuiEventHandler {
         }
 
         event.setCanceled(labelField.charTyped(event.getCodePoint(), event.getModifiers()));
-        mod.chestService.updateLabel(mod.currentChest.worldId, mod.currentChest.id, labelField.getText());
+        String text = labelField.getText();
+        mod.chestService.updateLabel(mod.currentChest.worldId, mod.currentChest.id, text);
         if (event.isCanceled()) {
-            String text = labelField.getText();
             labelField.setText(text);
         }
+        mod.search();
     }
 
     @SubscribeEvent
