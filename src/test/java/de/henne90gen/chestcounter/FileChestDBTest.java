@@ -307,7 +307,7 @@ public class FileChestDBTest {
             List<String> lines = reader.lines().collect(Collectors.toList());
             String expectedLine = "{" +
                     "\"version\":" + ChestStorage.CURRENT_VERSION + "," +
-                    "\"config\":{\"enabled\":true,\"showSearchResultInInventory\":true,\"searchResultPlacement\":\"" + SearchResultPlacement.RIGHT_OF_INVENTORY + "\"}," +
+                    "\"config\":{\"enabled\":true,\"showSearchResultInInventory\":true,\"showSearchResultInGame\":true,\"searchResultPlacement\":\"" + SearchResultPlacement.RIGHT_OF_INVENTORY + "\"}," +
                     "\"worlds\":{}}";
             assertEquals(1, lines.size());
             assertEquals(expectedLine, lines.get(0));

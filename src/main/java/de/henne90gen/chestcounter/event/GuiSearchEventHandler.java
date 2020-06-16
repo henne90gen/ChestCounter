@@ -154,13 +154,12 @@ public class GuiSearchEventHandler extends GuiEventHandler {
             return;
         }
 
+        ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
         boolean byId = false;
         if (searchToggle != null) {
             byId = !searchToggle.isStateTriggered();
         }
-        ContainerScreen<?> screen = (ContainerScreen<?>) event.getGui();
-        boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
-        Renderer.renderSearchResult(screen, mod.lastSearchResult, byId, placeToTheRightOfInventory);
+        Renderer.renderSearchResultInMenu(screen, config, mod.lastSearchResult, byId);
     }
 
     private void addUiComponents(GuiScreenEvent.InitGuiEvent.Post event, ChestConfig config) {

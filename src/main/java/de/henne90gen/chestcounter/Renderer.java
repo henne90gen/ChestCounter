@@ -3,8 +3,11 @@ package de.henne90gen.chestcounter;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;
+import de.henne90gen.chestcounter.db.entities.ChestConfig;
+import de.henne90gen.chestcounter.db.entities.SearchResultPlacement;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
+import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
@@ -16,11 +19,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static net.minecraft.client.gui.AbstractGui.fill;
 
 public class Renderer {
 
@@ -111,33 +113,25 @@ public class Renderer {
         matrixStackIn.pop();
     }
 
-    public static void renderSearchResult(ContainerScreen<?> screen, ChestSearchResult searchResult, boolean byId, boolean placeToTheRightOfInventory) {
-        int baseX;
-        if (placeToTheRightOfInventory) {
-            int guiLeft = screen.getGuiLeft();
-            int xSize = screen.getXSize();
-            baseX = guiLeft + xSize + MARGIN;
-        } else {
-            baseX = MARGIN;
-        }
-
+    private static List<String> getSearchResultText(ChestSearchResult searchResult, boolean byId) {
         boolean searching = searchResult.search != null && !searchResult.search.isEmpty();
-
-        int currentY = OFFSET_FROM_TOP;
         Map<String, ChestSearchResult.Entry> resultMap = byId ? searchResult.byId : searchResult.byLabel;
+
         List<Pair<Map.Entry<String, ChestSearchResult.Entry>, Double>> results = resultMap
                 .entrySet()
                 .stream()
                 .map(e -> new Pair<>(e, getDistanceToClosestPosition(e.getValue().positions)))
                 .sorted(Comparator.comparing(Pair::getSecond))
                 .collect(Collectors.toList());
+
+        List<String> result = new ArrayList<>();
         for (Pair<Map.Entry<String, ChestSearchResult.Entry>, Double> pair : results) {
             Map.Entry<String, ChestSearchResult.Entry> entry = pair.getFirst();
             ChestSearchResult.Entry value = entry.getValue();
             double distanceToChest = pair.getSecond();
             String formattedDistance = TWO_DECIMAL_PLACES_FORMAT.format(distanceToChest);
-            String label = "";
 
+            String label = "";
             if (searching) {
                 label = entry.getKey() + " -> " + formattedDistance + "m";
             } else {
@@ -150,19 +144,95 @@ public class Renderer {
                 label += ")";
             }
 
-            renderTextInMenu(label, baseX, currentY);
+            result.add(label);
 
-            currentY += MARGIN;
             if (searching) {
                 for (Map.Entry<String, Integer> amountEntry : value.items.entrySet()) {
-                    String amountString = amountEntry.getValue() + "x " + amountEntry.getKey();
-                    int xOffset = 7;
-                    renderTextInMenu(amountString, baseX + xOffset, currentY);
-                    currentY += MARGIN;
+                    String amountString = "    " + amountEntry.getValue() + "x " + amountEntry.getKey();
+                    result.add(amountString);
                 }
-                currentY += 3;
+                result.add("");
             }
         }
+        return result;
+    }
+
+    public static void renderSearchResultInMenu(ContainerScreen<?> screen, ChestConfig config, ChestSearchResult searchResult, boolean byId) {
+        boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
+        int baseX;
+        if (placeToTheRightOfInventory) {
+            int guiLeft = screen.getGuiLeft();
+            int xSize = screen.getXSize();
+            baseX = guiLeft + xSize + Renderer.MARGIN;
+        } else {
+            baseX = Renderer.MARGIN;
+        }
+
+        int backgroundWidth = 0;
+        Renderer.renderSearchResult(baseX, OFFSET_FROM_TOP, searchResult, byId, backgroundWidth);
+    }
+
+    public static void renderSearchResultInGame(ChestConfig config, ChestSearchResult searchResult) {
+        Minecraft mc = Minecraft.getInstance();
+        MainWindow mainWindow = mc.getMainWindow();
+        boolean placeToTheRightOfInventory = config.searchResultPlacement == SearchResultPlacement.RIGHT_OF_INVENTORY;
+
+        int baseX;
+        if (placeToTheRightOfInventory) {
+            baseX = (int) (mainWindow.getScaledWidth() * 0.7F);
+        } else {
+            baseX = 1;
+        }
+
+        int backgroundWidth = (int) (mainWindow.getScaledWidth() * 0.3F);
+        Renderer.renderSearchResult(baseX, 1, searchResult, false, backgroundWidth);
+    }
+
+    public static void renderSearchResult(int left, int top, ChestSearchResult searchResult, boolean byId, int backgroundWidth) {
+        List<String> lines = getSearchResultText(searchResult, byId);
+
+        Minecraft mc = Minecraft.getInstance();
+        FontRenderer fontRenderer = mc.fontRenderer;
+
+        RenderSystem.pushMatrix();
+        RenderSystem.multMatrix(Matrix4f.makeTranslate(left, top, 0.0F));
+
+        float scale = 0.65F;
+        RenderSystem.multMatrix(Matrix4f.makeScale(1.0F, scale, 1.0F));
+
+        int height = 9;
+        if (backgroundWidth > 0) {
+            Optional<Integer> backgroundHeightOpt = lines.stream()
+                    .filter(Objects::nonNull)
+                    .map(line -> line.isEmpty() ? height / 2 : height)
+                    .reduce(Integer::sum);
+            if (backgroundHeightOpt.isPresent()) {
+                int x1 = -1;
+                int x2 = -1 + backgroundWidth + 2;
+                int y1 = -1;
+                int y2 = -1 + backgroundHeightOpt.get();
+                fill(x1, y1, x2, y2, -1873784752);
+            }
+        }
+
+        RenderSystem.multMatrix(Matrix4f.makeScale(scale, 1.0F, 1.0F));
+
+        int currentY = 0;
+        for (String line : lines) {
+            if (line == null) {
+                continue;
+            }
+
+            if (line.isEmpty()) {
+                currentY += height / 2;
+                continue;
+            }
+
+            fontRenderer.drawString(line, 0, currentY, 14737632);
+            currentY += height;
+        }
+
+        RenderSystem.popMatrix();
     }
 
     private static double getDistanceToClosestPosition(List<Vec3d> positions) {

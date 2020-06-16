@@ -5,6 +5,7 @@ import de.henne90gen.chestcounter.ChestCounter;
 import de.henne90gen.chestcounter.Helper;
 import de.henne90gen.chestcounter.Renderer;
 import de.henne90gen.chestcounter.db.entities.ChestConfig;
+import de.henne90gen.chestcounter.db.entities.SearchResultPlacement;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
@@ -14,6 +15,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -93,37 +95,17 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    public void keyPressedGui(GuiScreenEvent.KeyboardKeyReleasedEvent event) {
-        LOGGER.info("Event: {}", event.getClass());
-        checkKeybindings();
-    }
-
-    @SubscribeEvent
-    public void keyPressedGui(GuiScreenEvent.KeyboardKeyPressedEvent event) {
-        LOGGER.info("Event: {}", event.getClass());
-        checkKeybindings();
-    }
-
-    @SubscribeEvent
-    public void keyPressedGui(GuiScreenEvent.KeyboardKeyEvent event) {
-        LOGGER.info("Event: {}", event.getClass());
-        checkKeybindings();
-    }
-
-    @SubscribeEvent
     public void keyPressed(InputEvent.KeyInputEvent event) {
         if (event.getAction() != GLFW.GLFW_RELEASE) {
             return;
         }
 
-        checkKeybindings();
-    }
-
-    private void checkKeybindings() {
+        LOGGER.info("KEY: {}", event.getKey());
         ChestConfig config = mod.chestService.getConfig();
 
         checkToggleMod(config);
         checkShowSearchResultInInventory(config);
+        checkShowSearchResultInGame(config);
 
         mod.chestService.setConfig(config);
     }
@@ -132,9 +114,20 @@ public class ChestEventHandler {
         if (mod.showSearchResultInInventory.isPressed()) {
             config.showSearchResultInInventory = !config.showSearchResultInInventory;
             if (config.showSearchResultInInventory) {
-                sendChatMessage("Search results visible");
+                sendChatMessage("Inventory search result visible");
             } else {
-                sendChatMessage("Search results hidden");
+                sendChatMessage("Inventory search result hidden");
+            }
+        }
+    }
+
+    private void checkShowSearchResultInGame(ChestConfig config) {
+        if (mod.showSearchResultInGame.isPressed()) {
+            config.showSearchResultInGame = !config.showSearchResultInGame;
+            if (config.showSearchResultInGame) {
+                sendChatMessage("Game search result visible");
+            } else {
+                sendChatMessage("Game search result hidden");
             }
         }
     }
@@ -182,7 +175,7 @@ public class ChestEventHandler {
     }
 
     @SubscribeEvent
-    public void render(RenderWorldLastEvent event) {
+    public void renderWorld(RenderWorldLastEvent event) {
         ChestConfig config = mod.chestService.getConfig();
         if (!config.enabled) {
             return;
@@ -197,5 +190,15 @@ public class ChestEventHandler {
         float partialTickTime = event.getPartialTicks();
         MatrixStack matrixStack = event.getMatrixStack();
         Renderer.renderChestLabels(chests, mod.lastSearchResult, maxDistance, partialTickTime, matrixStack);
+    }
+
+    @SubscribeEvent
+    public void renderGameOverlay(RenderGameOverlayEvent.Text event) {
+        ChestConfig config = mod.chestService.getConfig();
+        if (!config.enabled || !config.showSearchResultInGame) {
+            return;
+        }
+
+        Renderer.renderSearchResultInGame(config, mod.lastSearchResult);
     }
 }

@@ -38,6 +38,7 @@ public class ChestCounter {
 
     public KeyBinding toggleModEnabled;
     public KeyBinding showSearchResultInInventory;
+    public KeyBinding showSearchResultInGame;
 
     public ChestCounter() {
         FMLJavaModLoadingContext fmlJavaModLoadingContext = FMLJavaModLoadingContext.get();
@@ -70,20 +71,25 @@ public class ChestCounter {
         LOGGER.info("[{}] Client Setup...", MOD_NAME);
 
         registerKeybindings();
+        search();
 
         LOGGER.info("[{}] Client Setup Done.", MOD_NAME);
     }
 
     private void registerKeybindings() {
-        int keyCode = 297; // F8
+        int keyCode = 67; // C
 
         String toggleDescription = "Toggle mod enabled";
         toggleModEnabled = new KeyBinding(toggleDescription, KeyConflictContext.UNIVERSAL, KeyModifier.NONE, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
         ClientRegistry.registerKeyBinding(toggleModEnabled);
 
-        String searchResultDescription = "Show search results in inventory";
-        showSearchResultInInventory = new KeyBinding(searchResultDescription, KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
+        String searchResultInInventoryDescription = "Show search results in inventory";
+        showSearchResultInInventory = new KeyBinding(searchResultInInventoryDescription, KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
         ClientRegistry.registerKeyBinding(showSearchResultInInventory);
+
+        String searchResultInGameDescription = "Show search results in game";
+        showSearchResultInGame = new KeyBinding(searchResultInGameDescription, KeyConflictContext.UNIVERSAL, KeyModifier.ALT, InputMappings.Type.KEYSYM, keyCode, MOD_NAME);
+        ClientRegistry.registerKeyBinding(showSearchResultInGame);
     }
 
     public String getChestDBFilename() {

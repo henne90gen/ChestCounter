@@ -20,7 +20,9 @@ You can also give labels to your chests. This can be done by typing the label in
 
 ## Keyboard Shortcuts
 
-- Ctrl+C: enables/disables the mod (same as setting `enabled` in the config)
+- F8: enables/disables the mod (same as setting `enabled` in the config)
+- Ctrl+C: shows/hides the inventory search result (same as setting `showSearchResultInInventory` in the config)
+- Alt+C: shows/hides the in game search result (same as setting `showSearchResultInGame` in the config)
 
 ## Config
 
@@ -33,7 +35,9 @@ Example file:
     "version": 2,
     "config": {
         "enabled": true,
-        "searchResultPlacement": "RIGHT_OF_INVENTORY"
+        "searchResultPlacement": "RIGHT_OF_INVENTORY",
+        "showSearchResultInInventory": true,
+        "showSearchResultInGame": true
     },
     "worlds": {}
 }
@@ -44,3 +48,4 @@ Example file:
 | `enabled`                     | true               | Disabling the mod means that no additional UI will be rendered and it will also no longer collect data on your items |
 | `searchResultPlacement`       | RIGHT_OF_INVENTORY | Available values: `RIGHT_OF_INVENTORY`, `LEFT_OF_INVENTORY`       |
 | `showSearchResultInInventory` | true               | Whether the search result should be shown in the inventory or not |
+| `showSearchResultInGame`      | true               | Whether the search result should be shown in game or not          |
