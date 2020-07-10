@@ -19,9 +19,11 @@ public abstract class GuiEventHandler {
     }
 
     protected void keyPressedOnTextField(GuiScreenEvent.KeyboardKeyPressedEvent.Pre event, TextFieldWidget textField) {
-        event.setCanceled(textField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers()));
+        boolean keyPressed = textField.keyPressed(event.getKeyCode(), event.getScanCode(), event.getModifiers());
+        event.setCanceled(keyPressed);
         boolean disallowedKeyPressed = event.getKeyCode() == 69/*e*/ || event.getKeyCode() == 76/*l*/;
-        if (disallowedKeyPressed && textField.isFocused()) {
+        boolean isFocused = textField.isFocused();
+        if (disallowedKeyPressed && isFocused) {
             event.setCanceled(true);
         }
     }

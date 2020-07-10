@@ -12,11 +12,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.TransformationMatrix;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.math.vector.TransformationMatrix;
+import net.minecraft.util.math.vector.Vector3d;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -194,11 +194,12 @@ public class Renderer {
         Minecraft mc = Minecraft.getInstance();
         FontRenderer fontRenderer = mc.fontRenderer;
 
-        RenderSystem.pushMatrix();
-        RenderSystem.multMatrix(Matrix4f.makeTranslate(left, top, 0.0F));
+        MatrixStack matrixStack = new MatrixStack();
+        matrixStack.push();
+        matrixStack.translate(left, top, 0.0F);
 
         float scale = 0.65F;
-        RenderSystem.multMatrix(Matrix4f.makeScale(1.0F, scale, 1.0F));
+        matrixStack.scale(1.0F, scale, 1.0F);
 
         int height = 9;
         if (backgroundWidth > 0) {
@@ -211,11 +212,11 @@ public class Renderer {
                 int x2 = -1 + backgroundWidth + 2;
                 int y1 = -1;
                 int y2 = -1 + backgroundHeightOpt.get();
-                fill(x1, y1, x2, y2, -1873784752);
+                fill(matrixStack, x1, y1, x2, y2, -1873784752);
             }
         }
 
-        RenderSystem.multMatrix(Matrix4f.makeScale(scale, 1.0F, 1.0F));
+        matrixStack.scale(scale, 1.0F, 1.0F);
 
         int currentY = 0;
         for (String line : lines) {
@@ -228,14 +229,14 @@ public class Renderer {
                 continue;
             }
 
-            fontRenderer.drawString(line, 0, currentY, 14737632);
+            fontRenderer.drawString(matrixStack, line, 0, currentY, 14737632);
             currentY += height;
         }
 
-        RenderSystem.popMatrix();
+        matrixStack.pop();
     }
 
-    private static double getDistanceToClosestPosition(List<Vec3d> positions) {
+    private static double getDistanceToClosestPosition(List<Vector3d> positions) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return 0.0;
@@ -244,10 +245,10 @@ public class Renderer {
         double playerX = mc.player.getPosX();
         double playerY = mc.player.getPosY();
         double playerZ = mc.player.getPosZ();
-        Vec3d playerPos = new Vec3d(playerX, playerY, playerZ);
+        Vector3d playerPos = new Vector3d(playerX, playerY, playerZ);
 
         double closestDistance = Double.MAX_VALUE;
-        for (Vec3d pos : positions) {
+        for (Vector3d pos : positions) {
             double distance = pos.distanceTo(playerPos);
             if (distance < closestDistance) {
                 closestDistance = distance;

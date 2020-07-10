@@ -8,7 +8,7 @@ import de.henne90gen.chestcounter.db.entities.Chests;
 import de.henne90gen.chestcounter.service.dtos.Chest;
 import de.henne90gen.chestcounter.service.dtos.ChestSearchResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.vector.Vector3d;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -158,7 +158,7 @@ public class ChestService implements IChestService {
 					label = chestId;
 				}
 
-				Vec3d position = getAveragePosition(chestId);
+				Vector3d position = getAveragePosition(chestId);
 				updateResultMap(result.byLabel, itemEntry, position, label);
 				updateResultMap(result.byId, itemEntry, position, chestId);
 			}
@@ -167,18 +167,18 @@ public class ChestService implements IChestService {
 		return result;
 	}
 
-	private Vec3d getAveragePosition(String chestId) {
-		Vec3d position = new Vec3d(0, 0, 0);
+	private Vector3d getAveragePosition(String chestId) {
+		Vector3d position = new Vector3d(0, 0, 0);
 
 		List<BlockPos> positions = Helper.extractPositionsFromChestId(chestId);
 		for (BlockPos pos : positions) {
 			position = position.add(pos.getX(), pos.getY(), pos.getZ());
 		}
 
-		return new Vec3d(position.x / positions.size(), position.y / positions.size(), position.z / positions.size());
+		return new Vector3d(position.x / positions.size(), position.y / positions.size(), position.z / positions.size());
 	}
 
-	private void updateResultMap(Map<String, ChestSearchResult.Entry> result, Map.Entry<String, Integer> itemEntry, Vec3d pos, String key) {
+	private void updateResultMap(Map<String, ChestSearchResult.Entry> result, Map.Entry<String, Integer> itemEntry, Vector3d pos, String key) {
 		ChestSearchResult.Entry resultEntry = result.getOrDefault(key, new ChestSearchResult.Entry());
 
 		resultEntry.positions.add(pos);

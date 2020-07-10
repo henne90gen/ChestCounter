@@ -100,7 +100,6 @@ public class ChestEventHandler {
             return;
         }
 
-        LOGGER.info("KEY: {}", event.getKey());
         ChestConfig config = mod.chestService.getConfig();
 
         checkToggleMod(config);

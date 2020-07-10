@@ -16,12 +16,13 @@ import net.minecraft.tileentity.ChestTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.DimensionType;
 import net.minecraft.world.IWorld;
-import net.minecraft.world.dimension.DimensionType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -91,11 +92,28 @@ public class Helper {
     @Nonnull
     public static String getWorldID() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null) {
+        if (mc.world == null) {
             return "";
         }
 
-        DimensionType dimension = mc.player.dimension;
+        DimensionType dimension = mc.world.func_230315_m_();
+        String dimensionStr = "unknown";
+        try {
+            Field dimensionIdField = DimensionType.class.
+                    getDeclaredField("field_236010_o_");
+            dimensionIdField.setAccessible(true);
+            long dimensionId = ((OptionalLong) dimensionIdField.get(dimension)).orElseGet(() -> 0L);
+            if (dimensionId == 0) {
+                dimensionStr = "DimensionType{minecraft:overworld}";
+            } else if (dimensionId == 18000L) {
+                dimensionStr = "DimensionType{minecraft:the_nether}";
+            } else if (dimensionId == 6000L) {
+                dimensionStr = "DimensionType{minecraft:the_end}";
+            }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            LOGGER.error("Could not find out which dimension the player is in.");
+        }
+
         String worldName;
         ServerData currentServerData = mc.getCurrentServerData();
         if (currentServerData != null) {
@@ -104,7 +122,7 @@ public class Helper {
             if (mc.world != null) {
                 MinecraftServer server = mc.world.getServer();
                 if (server != null) {
-                    worldName = server.getWorldName();
+                    worldName = server.getName();
                 } else {
                     worldName = "default";
                 }
@@ -113,7 +131,7 @@ public class Helper {
             }
         }
 
-        return worldName + ":" + dimension;
+        return worldName + ":" + dimensionStr;
     }
 
     public static String createDefaultLabel(String chestId) {

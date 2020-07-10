@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.gui.widget.ToggleWidget;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -206,7 +207,7 @@ public class GuiSearchEventHandler extends GuiEventHandler {
                 Minecraft.getInstance().fontRenderer,
                 x, 2,
                 SEARCH_FIELD_WIDTH, 10,
-                "Search"
+                new StringTextComponent("Search")
         );
         searchField.visible = visible;
         if (mod.lastSearchResult != null) {

@@ -199,7 +199,7 @@ public class FileChestDBTest {
         assertEquals("TestChestLabel", chestContent.label);
         assertEquals(1, chestContent.items.size());
         assertTrue(chestContent.items.containsKey("Glass"));
-        assertEquals(new Integer(5), chestContent.items.get("Glass"));
+        assertEquals(Integer.valueOf(5), chestContent.items.get("Glass"));
 
         File dbFile = new File(filename);
         dbFile.deleteOnExit();

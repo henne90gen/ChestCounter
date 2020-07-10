@@ -7,6 +7,7 @@ import net.minecraft.client.gui.screen.inventory.ChestScreen;
 import net.minecraft.client.gui.screen.inventory.ContainerScreen;
 import net.minecraft.client.gui.screen.inventory.CreativeScreen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -130,7 +131,7 @@ public class GuiLabelEventHandler extends GuiEventHandler {
                 Minecraft.getInstance().fontRenderer,
                 guiLeft + offsetLeft, guiTop + offsetTop,
                 width, 10,
-                "Chest Label"
+                new StringTextComponent("Chest Label")
         );
         ChestConfig config = mod.chestService.getConfig();
         labelField.visible = config.enabled;
