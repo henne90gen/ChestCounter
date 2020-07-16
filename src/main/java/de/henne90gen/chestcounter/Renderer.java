@@ -34,14 +34,17 @@ public class Renderer {
 
     public static void renderChestLabels(List<Chest> chests, ChestSearchResult searchResult, float maxDistance, float partialTickTime, MatrixStack matrixStack) {
         for (Chest chest : chests) {
+            List<BlockPos> positions = chest.getBlockPositions();
+            boolean chestHasItemFromSearch = searchResult != null && searchResult.byId.containsKey(ChestSearchResult.keyId(chest.id)) && !searchResult.search.isEmpty();
+            BlockPos pos = Helper.getClosestPositionToPlayer(positions, partialTickTime);
+
             String text = chest.label;
-            if (text == null || text.isEmpty()) {
+            boolean hasNoLabel = text == null || text.isEmpty();
+            if (hasNoLabel && !chestHasItemFromSearch) {
+                continue;
+            } else if (hasNoLabel) {
                 text = chest.id;
             }
-
-            List<BlockPos> positions = chest.getBlockPositions();
-            boolean chestHasItemFromSearch = searchResult != null && searchResult.byId.containsKey(chest.id) && !searchResult.search.isEmpty();
-            BlockPos pos = Helper.getClosestPositionToPlayer(positions, partialTickTime);
 
             int color = 0xFFFFFF;
             float finalMaxDistance = maxDistance;
@@ -58,7 +61,7 @@ public class Renderer {
             color = 0xFFFFFF;
             float offsetY = CHEST_NAME_FONT_SIZE / 3.0F;
             int count = 0;
-            for (Map.Entry<String, Integer> entry : searchResult.byId.get(chest.id).items.entrySet()) {
+            for (Map.Entry<String, Integer> entry : searchResult.byId.get(ChestSearchResult.keyId(chest.id)).items.entrySet()) {
                 if (count > 5) {
                     break;
                 }
@@ -115,9 +118,9 @@ public class Renderer {
 
     private static List<String> getSearchResultText(ChestSearchResult searchResult, boolean byId) {
         boolean searching = searchResult.search != null && !searchResult.search.isEmpty();
-        Map<String, ChestSearchResult.Entry> resultMap = byId ? searchResult.byId : searchResult.byLabel;
+        Map<ChestSearchResult.Key, ChestSearchResult.Value> resultMap = byId ? searchResult.byId : searchResult.byLabel;
 
-        List<Pair<Map.Entry<String, ChestSearchResult.Entry>, Double>> results = resultMap
+        List<Pair<Map.Entry<ChestSearchResult.Key, ChestSearchResult.Value>, Double>> results = resultMap
                 .entrySet()
                 .stream()
                 .map(e -> new Pair<>(e, getDistanceToClosestPosition(e.getValue().positions)))
@@ -125,23 +128,26 @@ public class Renderer {
                 .collect(Collectors.toList());
 
         List<String> result = new ArrayList<>();
-        for (Pair<Map.Entry<String, ChestSearchResult.Entry>, Double> pair : results) {
-            Map.Entry<String, ChestSearchResult.Entry> entry = pair.getFirst();
-            ChestSearchResult.Entry value = entry.getValue();
+        for (Pair<Map.Entry<ChestSearchResult.Key, ChestSearchResult.Value>, Double> pair : results) {
+            Map.Entry<ChestSearchResult.Key, ChestSearchResult.Value> entry = pair.getFirst();
+            ChestSearchResult.Key key = entry.getKey();
+            ChestSearchResult.Value value = entry.getValue();
             double distanceToChest = pair.getSecond();
             String formattedDistance = TWO_DECIMAL_PLACES_FORMAT.format(distanceToChest);
 
-            String label = "";
+            String label = formattedDistance + "m" + " -> ";
             if (searching) {
-                label = entry.getKey() + " -> " + formattedDistance + "m";
+                label += key.key;
             } else {
-                label += formattedDistance + "m" + " -> " + entry.getKey() + " (";
+                if (!key.isId) {
+                    label += key.key + " -> ";
+                }
+
                 ArrayList<Map.Entry<String, Integer>> entries = new ArrayList<>(value.items.entrySet());
                 label += entries.stream()
                         .sorted(Map.Entry.comparingByValue())
                         .map(e -> e.getValue() + "x " + e.getKey())
                         .collect(Collectors.joining(", "));
-                label += ")";
             }
 
             result.add(label);
