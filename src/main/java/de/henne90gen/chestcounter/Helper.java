@@ -96,7 +96,7 @@ public class Helper {
             return "";
         }
 
-        DimensionType dimension = mc.world.func_230315_m_();
+        DimensionType dimension = mc.world.getDimensionType();
         String dimensionStr = "unknown";
         try {
             Field dimensionIdField = DimensionType.class.
