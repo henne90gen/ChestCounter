@@ -13,6 +13,8 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.Util;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -145,7 +147,7 @@ public class ChestEventHandler {
     private void sendChatMessage(String message) {
         String finalMessage = "[" + MOD_NAME + "] " + message;
         if (Minecraft.getInstance().player != null && Minecraft.getInstance().world != null && Minecraft.getInstance().world.isRemote) {
-            Minecraft.getInstance().player.sendChatMessage(finalMessage);
+            Minecraft.getInstance().player.sendMessage(new StringTextComponent(finalMessage),Util.DUMMY_UUID);
         }
     }
 
