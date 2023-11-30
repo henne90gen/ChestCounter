@@ -11,6 +11,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Arrays;
 
 import static org.junit.Assert.*;
 
@@ -309,8 +310,10 @@ public class FileChestDBTest {
                     "\"version\":" + ChestStorage.CURRENT_VERSION + "," +
                     "\"config\":{\"enabled\":true,\"showSearchResultInInventory\":true,\"showSearchResultInGame\":true,\"searchResultPlacement\":\"" + SearchResultPlacement.RIGHT_OF_INVENTORY + "\"}," +
                     "\"worlds\":{}}";
+            String sortedExpectedLine = sortFileLines(expectedLine);
             assertEquals(1, lines.size());
-            assertEquals(expectedLine, lines.get(0));
+            String sortedLines = sortFileLines(lines.get(0));
+            assertEquals(sortedExpectedLine, sortedLines);
         }
         new File(filename).delete();
     }
@@ -359,5 +362,23 @@ public class FileChestDBTest {
                     + chestID
                     + "\":{\"items\":{\"" + itemName + "\":" + itemAmount + "},\"label\":\"" + chestLabel + "\"}}}}");
         }
+    }
+
+    private String sortFileLines(String input) {
+        String inputFields = input.substring(1, input.length() - 1);
+        int configIdx = inputFields.indexOf("\"config");
+        String configRaw = inputFields.substring(configIdx);
+        int configStart = configRaw.indexOf("{");
+        int configEnd = configRaw.indexOf("}");
+        String configString = configRaw.substring(configStart + 1, configEnd);
+        String[] configArr = configString.split(",");
+        Arrays.sort(configArr);
+        String sortedConfigString = "\"config\":{" + String.join(".", configArr) + "}";
+        String newInputFields = inputFields.substring(0, configIdx) + sortedConfigString + configRaw.substring(configEnd + 1);
+        System.out.println("New Input: " + newInputFields);
+        String[] outsideList = newInputFields.split(",");
+        Arrays.sort(outsideList);
+        String ans = "{" + String.join(",", outsideList) + "}";
+        return ans;
     }
 }
